@@ -46,6 +46,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
     private void GameInput_OnAttackAction(object sender, EventArgs e) {
         // if (!KitchenGameManager.Instance.IsGamePlaying()) return;
+        if (isAttacking) return;
+        
         isAttacking = true;
         Invoke(nameof(ResetAttacking), AttackDelay);
         Attack();
