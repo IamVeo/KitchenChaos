@@ -1,7 +1,4 @@
-using JetBrains.Annotations;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class TableCounter : BaseCounter {
@@ -33,7 +30,11 @@ public class TableCounter : BaseCounter {
         if(!isOccupied()) {
             return;
         }
-
-        if(!currentMonster.IsWaiting)
+        
+        if (player.HasKitchenObject()) {
+            if(player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject)) {
+                player.GetKitchenObject().DestroySelf();
+            }
+        }
     }
 }
