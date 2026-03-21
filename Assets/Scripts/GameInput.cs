@@ -16,6 +16,7 @@ public class GameInput : MonoBehaviour {
     public event EventHandler OnInteractAlternateAction;
     public event EventHandler OnPauseAction;
     public event EventHandler OnBindingRebind;
+    public event EventHandler OnAttackAction;
 
 
     public enum Binding {
@@ -25,6 +26,7 @@ public class GameInput : MonoBehaviour {
         Move_Right,
         Interact,
         InteractAlternate,
+        Attack,
         Pause,
         Gamepad_Interact,
         Gamepad_InteractAlternate,
@@ -49,12 +51,14 @@ public class GameInput : MonoBehaviour {
 
         playerInputActions.Player.Interact.performed += Interact_performed;
         playerInputActions.Player.InteractAlternate.performed += InteractAlternate_performed;
+        playerInputActions.Player.Attack.performed += Attack_performed;
         playerInputActions.Player.Pause.performed += Pause_performed;
     }
 
     private void OnDestroy() {
         playerInputActions.Player.Interact.performed -= Interact_performed;
         playerInputActions.Player.InteractAlternate.performed -= InteractAlternate_performed;
+        playerInputActions.Player.Attack.performed -= Attack_performed;
         playerInputActions.Player.Pause.performed -= Pause_performed;
 
         playerInputActions.Dispose();
@@ -70,6 +74,10 @@ public class GameInput : MonoBehaviour {
 
     private void Interact_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj) {
         OnInteractAction?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void Attack_performed(UnityEngine.InputSystem.InputAction.CallbackContext obj) {
+        OnAttackAction?.Invoke(this, EventArgs.Empty);
     }
 
     public Vector2 GetMovementVectorNormalized() {
@@ -95,6 +103,8 @@ public class GameInput : MonoBehaviour {
                 return playerInputActions.Player.Interact.bindings[0].ToDisplayString();
             case Binding.InteractAlternate:
                 return playerInputActions.Player.InteractAlternate.bindings[0].ToDisplayString();
+            case Binding.Attack:
+                return playerInputActions.Player.Attack.bindings[0].ToDisplayString();
             case Binding.Pause:
                 return playerInputActions.Player.Pause.bindings[0].ToDisplayString();
             case Binding.Gamepad_Interact:
@@ -136,6 +146,10 @@ public class GameInput : MonoBehaviour {
                 break;
             case Binding.InteractAlternate:
                 inputAction = playerInputActions.Player.InteractAlternate;
+                bindingIndex = 0;
+                break;
+            case Binding.Attack:
+                inputAction = playerInputActions.Player.Attack;
                 bindingIndex = 0;
                 break;
             case Binding.Pause:

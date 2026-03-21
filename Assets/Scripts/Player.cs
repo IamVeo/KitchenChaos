@@ -1,29 +1,30 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class Player : MonoBehaviour, IKitchenObjectParent {
+public class Player : MonoBehaviour, IKitchenObjectParent, IDamagable {
 
 
     public static Player Instance { get; private set; }
-
-
-
+    [SerializeField] private PlayerDataSO playerDataSO;
+    
     public event EventHandler OnPickedSomething;
+    public event EventHandler OnAttacking;
+    public event EventHandler OnDamaged;
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
     public class OnSelectedCounterChangedEventArgs : EventArgs {
         public BaseCounter selectedCounter;
     }
 
-
-    [SerializeField] private float moveSpeed = 7f;
+    
     [SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
+    public float MoveSpeed => playerDataSO.moveSpeed;
 
+    public float AttackDelay => playerDataSO.attackDelay;
 
     private bool isWalking;
+    private bool isAttacking;
     private Vector3 lastInteractDir;
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
@@ -39,6 +40,21 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private void Start() {
         gameInput.OnInteractAction += GameInput_OnInteractAction;
         gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
+        gameInput.OnAttackAction += GameInput_OnAttackAction;
+        
+    }
+
+    private void GameInput_OnAttackAction(object sender, EventArgs e) {
+        if (!KitchenGameManager.Instance.IsGamePlaying()) return;
+
+        isAttacking = true;
+        Invoke(nameof(ResetAttacking), AttackDelay);
+        Attack();
+    }
+
+    private void ResetAttacking()
+    {
+        isAttacking = false;
     }
 
     private void GameInput_OnInteractAlternateAction(object sender, EventArgs e) {
@@ -57,7 +73,9 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         }
     }
 
-    private void Update() {
+    private void Update()
+    {
+        if (isAttacking) return;
         HandleMovement();
         HandleInteractions();
     }
@@ -96,7 +114,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
         Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
 
-        float moveDistance = moveSpeed * Time.deltaTime;
+        float moveDistance = MoveSpeed * Time.deltaTime;
         float playerRadius = .7f;
         float playerHeight = 2f;
         bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDir, moveDistance);
@@ -168,5 +186,14 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     public bool HasKitchenObject() {
         return kitchenObject != null;
     }
+    
+    public void TakeDamage(int damageAmount)
+    {
+        OnDamaged?.Invoke(this, EventArgs.Empty);
+    }
 
+    private void Attack()
+    {
+        OnAttacking?.Invoke(this, EventArgs.Empty);
+    }
 }
