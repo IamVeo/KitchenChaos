@@ -25,7 +25,7 @@ public class PlayerAnimator : MonoBehaviour {
     }
 
     private void Update() {
-        animator.SetBool(IS_WALKING, player.IsWalking());
+        animator.SetBool(IS_WALKING, player.IsWalking() && !player.IsAttacking());
     }
 
     private void Player_OnAttacking(object sender, EventArgs e)

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class Player : MonoBehaviour, IKitchenObjectParent, IDamagable {
+public class Player : MonoBehaviour, IKitchenObjectParent {
 
 
     public static Player Instance { get; private set; }
@@ -45,8 +45,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent, IDamagable {
     }
 
     private void GameInput_OnAttackAction(object sender, EventArgs e) {
-        if (!KitchenGameManager.Instance.IsGamePlaying()) return;
-
+        // if (!KitchenGameManager.Instance.IsGamePlaying()) return;
         isAttacking = true;
         Invoke(nameof(ResetAttacking), AttackDelay);
         Attack();
@@ -82,6 +81,9 @@ public class Player : MonoBehaviour, IKitchenObjectParent, IDamagable {
 
     public bool IsWalking() {
         return isWalking;
+    }
+    public bool IsAttacking() {
+        return isAttacking;
     }
 
     private void HandleInteractions() {

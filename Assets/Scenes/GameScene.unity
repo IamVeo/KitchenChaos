@@ -10728,7 +10728,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b61725cf0ae71c84291bcc9aaa16b746, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 7
+  playerDataSO: {fileID: 11400000, guid: a68aa1b9627789a4baa24a5dbea22ffd, type: 2}
   gameInput: {fileID: 1908019854}
   countersLayerMask:
     serializedVersion: 2

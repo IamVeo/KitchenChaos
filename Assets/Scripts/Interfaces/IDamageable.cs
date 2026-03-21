@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-public interface  IDamagable
+public interface IDamageable
 {
     public event EventHandler OnDamaged;
     
