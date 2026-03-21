@@ -16,21 +16,21 @@ public class Enemy : MonoBehaviour, IHasProgress {
     private NavMeshAgent navMeshAgent;
     private TableCounter targetTable;
     private Transform targetTableSeat;
-    private EnemyDataSO monsterData;
+    private EnemyDataSO enemyData;
 
     private float patienceTimer;
     private float attackCooldownTimer;
-    
+
     private void Awake() {
         navMeshAgent = GetComponent<NavMeshAgent>();
     }
 
     public void Setup(TableCounter table, EnemyDataSO data) {
         targetTable = table;
-        targetTableSeat = table.getSeatPoint();
-        monsterData = data;
+        targetTableSeat = table.GetSeatPoint();
+        enemyData = data;
 
-        navMeshAgent.speed = monsterData.moveSpeed;
+        navMeshAgent.speed = enemyData.moveSpeed;
 
         currentState = State.WalkingToTable;
     }
@@ -59,13 +59,13 @@ public class Enemy : MonoBehaviour, IHasProgress {
         if (!navMeshAgent.pathPending && navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance) {
             navMeshAgent.isStopped = true;
             currentState = State.WaitingForFood;
-            patienceTimer = monsterData.patienceMax;
+            patienceTimer = enemyData.patienceMax;
         }
     }
 
     private void HandleWaitingForFood() {
         patienceTimer -= Time.deltaTime;
-        float patienceNormalized = patienceTimer / monsterData.patienceMax;
+        float patienceNormalized = patienceTimer / enemyData.patienceMax;
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = patienceNormalized
@@ -85,13 +85,13 @@ public class Enemy : MonoBehaviour, IHasProgress {
             attackCooldownTimer -= Time.deltaTime;
         }
 
-        if (Vector3.Distance(transform.position, playerPosition) <= monsterData.attackRange) {
+        if (Vector3.Distance(transform.position, playerPosition) <= enemyData.attackRange) {
             navMeshAgent.isStopped = true;
             transform.LookAt(playerPosition);
 
             if (attackCooldownTimer <= 0f) {
                 AttackPlayer();
-                attackCooldownTimer = monsterData.attackCooldown;
+                attackCooldownTimer = enemyData.attackCooldown;
             }
         }
     }
@@ -99,7 +99,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
     private void AttackPlayer() {
         if (Player.Instance.TryGetComponent<IDamageable>(out IDamageable playerDamageable)) {
             Vector3 damageDirection = Player.Instance.transform.position - transform.position;
-            playerDamageable.TakeDamage(monsterData.attackDamage, damageDirection);
+            playerDamageable.TakeDamage(enemyData.attackDamage, damageDirection);
         }
     }
 
@@ -110,7 +110,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
             progressNormalized = 0f
         });
 
-        MonsterSpawnManager.Instance.FreeTable(targetTable);
+        EnemySpawnManager.Instance.FreeTable(targetTable);
         Destroy(gameObject);
     }
 
@@ -121,7 +121,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
             progressNormalized = 0f
         });
 
-        MonsterSpawnManager.Instance.FreeTable(targetTable);
+        EnemySpawnManager.Instance.FreeTable(targetTable);
     }
 
     public bool IsWaitingForFood() {

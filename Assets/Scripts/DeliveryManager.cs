@@ -51,43 +51,47 @@ public class DeliveryManager : MonoBehaviour {
         for (int i = 0; i < waitingRecipeSOList.Count; i++) {
             RecipeSO waitingRecipeSO = waitingRecipeSOList[i];
 
-            if (waitingRecipeSO.kitchenObjectSOList.Count == plateKitchenObject.GetKitchenObjectSOList().Count) {
-                // Has the same number of ingredients
-                bool plateContentsMatchesRecipe = true;
-                foreach (KitchenObjectSO recipeKitchenObjectSO in waitingRecipeSO.kitchenObjectSOList) {
-                    // Cycling through all ingredients in the Recipe
-                    bool ingredientFound = false;
-                    foreach (KitchenObjectSO plateKitchenObjectSO in plateKitchenObject.GetKitchenObjectSOList()) {
-                        // Cycling through all ingredients in the Plate
-                        if (plateKitchenObjectSO == recipeKitchenObjectSO) {
-                            // Ingredient matches!
-                            ingredientFound = true;
-                            break;
-                        }
-                    }
-                    if (!ingredientFound) {
-                        // This Recipe ingredient was not found on the Plate
-                        plateContentsMatchesRecipe = false;
-                    }
-                }
+            if (IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
+                // Player delivered the correct recipe!
+                successfulRecipesAmount++;
+                waitingRecipeSOList.RemoveAt(i);
 
-                if (plateContentsMatchesRecipe) {
-                    // Player delivered the correct recipe!
-
-                    successfulRecipesAmount++;
-
-                    waitingRecipeSOList.RemoveAt(i);
-
-                    OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
-                    OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
-                    return;
-                }
+                OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
+                OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
+                return;
             }
         }
 
         // No matches found!
         // Player did not deliver a correct recipe
         OnRecipeFailed?.Invoke(this, EventArgs.Empty);
+    }
+    public bool IsRecipeMatching(PlateKitchenObject plateKitchenObject, RecipeSO waitingRecipeSO) {
+
+        if (waitingRecipeSO.kitchenObjectSOList.Count == plateKitchenObject.GetKitchenObjectSOList().Count) {
+
+            bool plateContentsMatchesRecipe = true;
+
+            foreach (KitchenObjectSO recipeKitchenObjectSO in waitingRecipeSO.kitchenObjectSOList) {
+                bool ingredientFound = false;
+
+                foreach (KitchenObjectSO plateKitchenObjectSO in plateKitchenObject.GetKitchenObjectSOList()) {
+                    if (plateKitchenObjectSO == recipeKitchenObjectSO) {
+                        ingredientFound = true;
+                        break;
+                    }
+                }
+
+                if (!ingredientFound) {
+                    plateContentsMatchesRecipe = false;
+                    break;
+                }
+            }
+
+            return plateContentsMatchesRecipe;
+        }
+
+        return false;
     }
 
     public List<RecipeSO> GetWaitingRecipeSOList() {
