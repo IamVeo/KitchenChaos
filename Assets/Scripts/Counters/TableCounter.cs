@@ -9,13 +9,13 @@ public class TableCounter : BaseCounter {
     }
     public event EventHandler OnOrderCompleted;
 
-    [SerializeField] private Transform monsterSeatPoint;
+    [SerializeField] private Transform seatPoint;
     private MonsterAI currentMonster;
     private RecipeSO waitingRecipeSO;
 
     public bool isOccupied() => currentMonster != null;
 
-    public Transform getMonsterSeatPoint() => monsterSeatPoint;
+    public Transform getSeatPoint() => seatPoint;
 
     public void SeatMonster(MonsterAI monster, RecipeSO recipeSO) {
         currentMonster = monster;
