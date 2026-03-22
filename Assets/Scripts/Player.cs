@@ -52,7 +52,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     }
 
     private void HealthManager_OnDied(object sender, EventArgs e) {
-        throw new NotImplementedException();
+        KitchenGameManager.Instance.SetGameOver();
     }
 
     private void GameInput_OnAttackAction(object sender, EventArgs e) {

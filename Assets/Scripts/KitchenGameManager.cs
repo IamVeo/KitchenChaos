@@ -109,4 +109,11 @@ public class KitchenGameManager : MonoBehaviour {
         }
     }
 
+    public void SetGameOver() {
+        if (state == State.GamePlaying) {
+            state = State.GameOver;
+            
+            OnStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 }
