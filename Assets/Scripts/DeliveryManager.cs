@@ -5,67 +5,27 @@ using UnityEngine;
 
 public class DeliveryManager : MonoBehaviour {
 
-
-    public event EventHandler OnRecipeSpawned;
-    public event EventHandler OnRecipeCompleted;
     public event EventHandler OnRecipeSuccess;
     public event EventHandler OnRecipeFailed;
 
-
     public static DeliveryManager Instance { get; private set; }
 
-
-    [SerializeField] private RecipeListSO recipeListSO;
-
-
-    private List<RecipeSO> waitingRecipeSOList;
-    private float spawnRecipeTimer;
-    private float spawnRecipeTimerMax = 4f;
-    private int waitingRecipesMax = 4;
     private int successfulRecipesAmount;
-
 
     private void Awake() {
         Instance = this;
-
-
-        waitingRecipeSOList = new List<RecipeSO>();
+        successfulRecipesAmount = 0;
     }
 
-    private void Update() {
-        spawnRecipeTimer -= Time.deltaTime;
-        if (spawnRecipeTimer <= 0f) {
-            spawnRecipeTimer = spawnRecipeTimerMax;
-
-            if (KitchenGameManager.Instance.IsGamePlaying() && waitingRecipeSOList.Count < waitingRecipesMax) {
-                RecipeSO waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
-
-                waitingRecipeSOList.Add(waitingRecipeSO);
-
-                OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
-            }
-        }
+    public void AddSuccessfulDelivery() {
+        successfulRecipesAmount++;
+        OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
     }
 
-    public void DeliverRecipe(PlateKitchenObject plateKitchenObject) {
-        for (int i = 0; i < waitingRecipeSOList.Count; i++) {
-            RecipeSO waitingRecipeSO = waitingRecipeSOList[i];
-
-            if (IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
-                // Player delivered the correct recipe!
-                successfulRecipesAmount++;
-                waitingRecipeSOList.RemoveAt(i);
-
-                OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
-                OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
-                return;
-            }
-        }
-
-        // No matches found!
-        // Player did not deliver a correct recipe
+    public void AddFailedDelivery() {
         OnRecipeFailed?.Invoke(this, EventArgs.Empty);
     }
+
     public bool IsRecipeMatching(PlateKitchenObject plateKitchenObject, RecipeSO waitingRecipeSO) {
 
         if (waitingRecipeSO.kitchenObjectSOList.Count == plateKitchenObject.GetKitchenObjectSOList().Count) {
@@ -92,10 +52,6 @@ public class DeliveryManager : MonoBehaviour {
         }
 
         return false;
-    }
-
-    public List<RecipeSO> GetWaitingRecipeSOList() {
-        return waitingRecipeSOList;
     }
 
     public int GetSuccessfulRecipesAmount() {

@@ -5,22 +5,27 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
 
     public static Player Instance { get; private set; }
+
     [SerializeField] private PlayerDataSO playerDataSO;
-    
+    [SerializeField] private GameInput gameInput;
+    [SerializeField] private LayerMask countersLayerMask;
+    [SerializeField] private Transform kitchenObjectHoldPoint;
+
+    [Header("Combat Stats")]
+    [SerializeField] private LayerMask enemyLayerMask;
+    [SerializeField] private int attackDamage = 30;
+    [SerializeField] private float attackRange = 1f;
+    [SerializeField] private float hitRadius = 1.2f;
+
     public event EventHandler OnPickedSomething;
     public event EventHandler OnAttacking;
-    public event EventHandler OnDamaged;
+
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
     public class OnSelectedCounterChangedEventArgs : EventArgs {
         public BaseCounter selectedCounter;
     }
 
-    
-    [SerializeField] private GameInput gameInput;
-    [SerializeField] private LayerMask countersLayerMask;
-    [SerializeField] private Transform kitchenObjectHoldPoint;
     public float MoveSpeed => playerDataSO.moveSpeed;
-
     public float AttackDelay => playerDataSO.attackDelay;
 
     private bool isWalking;
@@ -28,7 +33,6 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private Vector3 lastInteractDir;
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
-
 
     private void Awake() {
         if (Instance != null) {
@@ -41,7 +45,14 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         gameInput.OnInteractAction += GameInput_OnInteractAction;
         gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
         gameInput.OnAttackAction += GameInput_OnAttackAction;
-        
+
+        if (TryGetComponent<HealthManager>(out HealthManager healthManager)){
+            healthManager.OnDied += HealthManager_OnDied;
+        }
+    }
+
+    private void HealthManager_OnDied(object sender, EventArgs e) {
+        throw new NotImplementedException();
     }
 
     private void GameInput_OnAttackAction(object sender, EventArgs e) {
@@ -81,12 +92,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         HandleInteractions();
     }
 
-    public bool IsWalking() {
-        return isWalking;
-    }
-    public bool IsAttacking() {
-        return isAttacking;
-    }
+    public bool IsWalking() => isWalking;
+    public bool IsAttacking() => isAttacking;
 
     private void HandleInteractions() {
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
@@ -167,9 +174,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         });
     }
 
-    public Transform GetKitchenObjectFollowTransform() {
-        return kitchenObjectHoldPoint;
-    }
+    public Transform GetKitchenObjectFollowTransform() => kitchenObjectHoldPoint;
 
     public void SetKitchenObject(KitchenObject kitchenObject) {
         this.kitchenObject = kitchenObject;
@@ -179,25 +184,33 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         }
     }
 
-    public KitchenObject GetKitchenObject() {
-        return kitchenObject;
-    }
+    public KitchenObject GetKitchenObject() => kitchenObject;
 
-    public void ClearKitchenObject() {
-        kitchenObject = null;
-    }
+    public void ClearKitchenObject() => kitchenObject = null;
 
-    public bool HasKitchenObject() {
-        return kitchenObject != null;
-    }
-    
-    public void TakeDamage(int damageAmount)
-    {
-        OnDamaged?.Invoke(this, EventArgs.Empty);
-    }
+    public bool HasKitchenObject() => kitchenObject != null;
 
-    private void Attack()
-    {
+    private void Attack() {
         OnAttacking?.Invoke(this, EventArgs.Empty);
+
+        Vector3 hitCenter = transform.position + lastInteractDir * attackRange;
+
+        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, hitRadius, enemyLayerMask);
+
+        foreach(Collider hitCollider in hitColliders) {
+            if (hitCollider.TryGetComponent<IDamageable>(out IDamageable damageableTarget)) {
+                Vector3 knockbackDirection = hitCollider.transform.position - transform.position;
+
+                damageableTarget.TakeDamage(attackDamage, lastInteractDir);
+            }
+        }
+    }
+
+    private void OnDrawGizmosSelected() {
+        Vector3 direction = lastInteractDir == Vector3.zero ? transform.forward : lastInteractDir;
+        Vector3 hitCenter = transform.position + direction * attackRange;
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(hitCenter, hitRadius);
     }
 }

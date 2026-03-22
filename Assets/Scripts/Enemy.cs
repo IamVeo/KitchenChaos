@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.AI;
 
+[RequireComponent(typeof(HealthManager))]
 public class Enemy : MonoBehaviour, IHasProgress {
     public event EventHandler<IHasProgress.OnProgressChangedEventArgs> OnProgressChanged;
 
@@ -20,9 +21,14 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     private float patienceTimer;
     private float attackCooldownTimer;
+    private HealthManager healthManager;
+
+    [SerializeField] private RecipeListSO recipeListSO;
+    private RecipeSO waitingRecipeSO;
 
     private void Awake() {
         navMeshAgent = GetComponent<NavMeshAgent>();
+        healthManager = GetComponent<HealthManager>();
     }
 
     public void Setup(TableCounter table, EnemyDataSO data) {
@@ -32,7 +38,19 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
         navMeshAgent.speed = enemyData.moveSpeed;
 
+        healthManager.SetMaxHealth(enemyData.maxHealth);
+        healthManager.OnDied += HealthManager_OnDied;
+
         currentState = State.WalkingToTable;
+    }
+
+    private void HealthManager_OnDied(object sender, EventArgs e) {
+        if (currentState == State.WalkingToTable || currentState == State.WaitingForFood) {
+            EnemySpawnManager.Instance.FreeTable(targetTable);
+        }
+
+        healthManager.OnDied -= HealthManager_OnDied;
+        Destroy(gameObject);
     }
 
     private void Update() {
@@ -60,6 +78,11 @@ public class Enemy : MonoBehaviour, IHasProgress {
             navMeshAgent.isStopped = true;
             currentState = State.WaitingForFood;
             patienceTimer = enemyData.patienceMax;
+
+            waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
+            Debug.Log("Dish name: " + waitingRecipeSO.name);
+
+            targetTable.SeatEnemy(this, waitingRecipeSO);
         }
     }
 
@@ -110,6 +133,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
             progressNormalized = 0f
         });
 
+        targetTable.ClearTable();
         EnemySpawnManager.Instance.FreeTable(targetTable);
         Destroy(gameObject);
     }
@@ -121,7 +145,29 @@ public class Enemy : MonoBehaviour, IHasProgress {
             progressNormalized = 0f
         });
 
+        targetTable.ClearTable();
         EnemySpawnManager.Instance.FreeTable(targetTable);
+    }
+
+    public bool TryDeliverFood(PlateKitchenObject plateKitchenObject) {
+        if (currentState != State.WaitingForFood) return false;
+        
+        if(DeliveryManager.Instance.IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
+            Debug.Log("Correct dish delivered!");
+
+            DeliveryManager.Instance.AddSuccessfulDelivery();
+            targetTable.ClearTable();
+
+            Leave();
+            return true;
+        } else {
+            Debug.Log("Wrong dish delivered!");
+
+            DeliveryManager.Instance.AddFailedDelivery();
+
+            Enrage();
+            return false;
+        }
     }
 
     public bool IsWaitingForFood() {

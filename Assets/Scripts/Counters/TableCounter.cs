@@ -17,6 +17,10 @@ public class TableCounter : BaseCounter {
 
     public Transform GetSeatPoint() => enemySeatPoint;
 
+    public void SetCurrentEnemy(Enemy enemy) {
+        currentEnemy = enemy;
+    }
+
     public void SeatEnemy(Enemy enemy, RecipeSO recipeSO) {
         currentEnemy = enemy;
         waitingRecipeSO = recipeSO;
@@ -31,21 +35,17 @@ public class TableCounter : BaseCounter {
             return;
         }
 
-        if (!currentEnemy.IsWaitingForFood()) {
-            return;
-        }
-
         if (player.HasKitchenObject()) {
             if (player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject)) {
 
-                if (DeliveryManager.Instance.IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
-                    currentEnemy.Leave();
-                } else {
-                    currentEnemy.Enrage();
-                }
+                if(currentEnemy != null && currentEnemy.IsWaitingForFood()) {
+                    bool isCorrectFood = currentEnemy.TryDeliverFood(plateKitchenObject);
 
-                player.GetKitchenObject().DestroySelf();
-                ClearTable();
+                    if (isCorrectFood) {
+                        player.GetKitchenObject().DestroySelf();
+                        currentEnemy = null;
+                    }
+                }
             }
         }
     }
