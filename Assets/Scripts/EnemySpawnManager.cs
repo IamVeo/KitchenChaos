@@ -25,7 +25,7 @@ public class EnemySpawnManager : MonoBehaviour {
     }
 
     private void Update() {
-        if (!KitchenGameManager.Instance.IsGamePlaying()) return;
+        // if (!KitchenGameManager.Instance.IsGamePlaying()) return;
 
         spawnTimer -= Time.deltaTime;
         if (spawnTimer <= 0f) {

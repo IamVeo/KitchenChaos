@@ -34,26 +34,26 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private Vector3 lastInteractDir;
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
+    private HealthManager healthManager;
 
     private void Awake() {
         if (Instance != null) {
             Debug.LogError("There is more than one Player instance");
         }
         Instance = this;
+        healthManager = GetComponent<HealthManager>();
     }
 
     private void Start() {
         gameInput.OnInteractAction += GameInput_OnInteractAction;
         gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
         gameInput.OnAttackAction += GameInput_OnAttackAction;
+        healthManager.OnDied += HealthManager_OnDied;
 
-        if (TryGetComponent<HealthManager>(out HealthManager healthManager)){
-            healthManager.OnDied += HealthManager_OnDied;
-        }
     }
 
     private void HealthManager_OnDied(object sender, EventArgs e) {
-        throw new NotImplementedException();
+        Destroy(gameObject);
     }
 
     private void GameInput_OnAttackAction(object sender, EventArgs e) {
@@ -197,10 +197,10 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         Collider[] hitColliders = Physics.OverlapSphere(hitCenter, HitRadius, enemyLayerMask);
 
         foreach(Collider hitCollider in hitColliders) {
-            if (hitCollider.TryGetComponent<IDamageable>(out IDamageable damageableTarget)) {
+            if (hitCollider.TryGetComponent(out IDamageable damageableTarget)) {
                 Vector3 knockbackDirection = hitCollider.transform.position - transform.position;
 
-                damageableTarget.TakeDamage(AttackDamage, lastInteractDir);
+                damageableTarget.TakeDamage(AttackDamage, knockbackDirection);
             }
         }
     }
@@ -211,5 +211,14 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(hitCenter, HitRadius);
+    }
+
+
+    private void OnDestroy()
+    {
+        gameInput.OnInteractAction -= GameInput_OnInteractAction;
+        gameInput.OnInteractAlternateAction -= GameInput_OnInteractAlternateAction;
+        gameInput.OnAttackAction -= GameInput_OnAttackAction;
+        healthManager.OnDied -= HealthManager_OnDied;
     }
 }

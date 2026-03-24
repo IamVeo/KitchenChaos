@@ -30,7 +30,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
         navMeshAgent = GetComponent<NavMeshAgent>();
         healthManager = GetComponent<HealthManager>();
     }
-
+    
     public void Setup(TableCounter table, EnemyDataSO data) {
         targetTable = table;
         targetTableSeat = table.GetSeatPoint();
@@ -48,8 +48,6 @@ public class Enemy : MonoBehaviour, IHasProgress {
         if (currentState == State.WalkingToTable || currentState == State.WaitingForFood) {
             EnemySpawnManager.Instance.FreeTable(targetTable);
         }
-
-        healthManager.OnDied -= HealthManager_OnDied;
         Destroy(gameObject);
     }
 
@@ -172,5 +170,11 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     public bool IsWaitingForFood() {
         return currentState == State.WaitingForFood;
+    }
+
+    private void OnDestroy()
+    {
+        healthManager.OnDied -= HealthManager_OnDied;
+        
     }
 }
