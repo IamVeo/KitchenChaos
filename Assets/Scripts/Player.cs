@@ -137,7 +137,9 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         float moveDistance = MoveSpeed * Time.deltaTime;
         float playerRadius = .7f;
         float playerHeight = 2f;
-        bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDir, moveDistance);
+        
+        bool colliderCasted = Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDir, out RaycastHit capsuleCastHit, moveDistance);
+        bool canMove = !colliderCasted || capsuleCastHit.collider.isTrigger;
 
         if (!canMove) {
             // Cannot move towards moveDir
