@@ -80,7 +80,6 @@ public class Enemy : MonoBehaviour, IHasProgress {
             patienceTimer = enemyData.patienceMax;
 
             waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
-            Debug.Log("Dish name: " + waitingRecipeSO.name);
 
             targetTable.SeatEnemy(this, waitingRecipeSO);
         }
@@ -153,16 +152,12 @@ public class Enemy : MonoBehaviour, IHasProgress {
         if (currentState != State.WaitingForFood) return false;
         
         if(DeliveryManager.Instance.IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
-            Debug.Log("Correct dish delivered!");
-
             DeliveryManager.Instance.AddSuccessfulDelivery();
             targetTable.ClearTable();
 
             Leave();
             return true;
         } else {
-            Debug.Log("Wrong dish delivered!");
-
             DeliveryManager.Instance.AddFailedDelivery();
 
             Enrage();

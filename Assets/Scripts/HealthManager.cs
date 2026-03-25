@@ -66,8 +66,12 @@ public class HealthManager : MonoBehaviour, IDamageable {
     }
 
     private void ApplyKnockback(Vector3 damageDirection) {
-        if(TryGetComponent<Rigidbody> (out Rigidbody rb)) {
-            damageDirection.y = 0;
+        damageDirection.y = 0;
+
+        if (TryGetComponent<Player>(out Player player)) {
+            player.ReceiveKnockback(damageDirection.normalized);
+        }
+        else if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
             rb.AddForce(damageDirection.normalized * 5f, ForceMode.Impulse);
         }
     }

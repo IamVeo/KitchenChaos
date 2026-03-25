@@ -34,6 +34,11 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
 
+    private Vector3 knockbackVector;
+    private float knockbackTimer;
+    private float knockbackDuration = 0.2f;
+    private float knockbackSpeed = 15f;
+
     private void Awake() {
         if (Instance != null) {
             Debug.LogError("There is more than one Player instance");
@@ -85,8 +90,12 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         }
     }
 
-    private void Update()
-    {
+    private void Update() {
+        if (knockbackTimer > 0) {
+            HandleKnockback();
+            return;
+        }
+
         if (isAttacking) return;
         HandleMovement();
         HandleInteractions();
@@ -166,6 +175,20 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         transform.forward = Vector3.Slerp(transform.forward, moveDir, Time.deltaTime * rotateSpeed);
     }
 
+    private void HandleKnockback() {
+        knockbackTimer -= Time.deltaTime;
+
+        float moveDistance = knockbackSpeed * Time.deltaTime;
+        float playerRadius = .7f;
+        float playerHeight = 2f;
+
+        bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, knockbackVector, moveDistance);
+
+        if (canMove) {
+            transform.position += knockbackVector * moveDistance;
+        }
+    }
+
     private void SetSelectedCounter(BaseCounter selectedCounter) {
         this.selectedCounter = selectedCounter;
 
@@ -204,6 +227,10 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
                 damageableTarget.TakeDamage(attackDamage, lastInteractDir);
             }
         }
+    }
+    public void ReceiveKnockback(Vector3 knockbackDir) {
+        knockbackVector = knockbackDir;
+        knockbackTimer = knockbackDuration;
     }
 
     private void OnDrawGizmosSelected() {
