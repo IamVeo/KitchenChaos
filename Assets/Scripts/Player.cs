@@ -89,7 +89,18 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
             selectedCounter.Interact(this);
         }
     }
+    
+    // ======================= Handle Player Input and Interactions =======================
 
+    private Vector3 GetMovementDirection()
+    {
+        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
+
+        Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
+
+        return moveDir;
+    }
+    
     private void Update() {
         if (knockbackTimer > 0) {
             HandleKnockback();
@@ -105,9 +116,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     public bool IsAttacking() => isAttacking;
 
     private void HandleInteractions() {
-        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
-
-        Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
+        Vector3 moveDir = GetMovementDirection();
 
         if (moveDir != Vector3.zero) {
             lastInteractDir = moveDir;
@@ -130,23 +139,35 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     }
 
     private void HandleMovement() {
-        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
-
-        Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
+        Vector3 moveDir = GetMovementDirection();
 
         float moveDistance = MoveSpeed * Time.deltaTime;
         float playerRadius = .7f;
         float playerHeight = 2f;
         
-        bool colliderCasted = Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDir, out RaycastHit capsuleCastHit, moveDistance);
-        bool canMove = !colliderCasted || capsuleCastHit.collider.isTrigger;
+        bool colliderCasted = Physics.CapsuleCast(
+            transform.position, 
+            transform.position + Vector3.up * playerHeight, 
+            playerRadius, 
+            moveDir, 
+            moveDistance,
+            Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore);
+        bool canMove = !colliderCasted;
 
         if (!canMove) {
             // Cannot move towards moveDir
 
             // Attempt only X movement
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
+            colliderCasted = Physics.CapsuleCast(transform.position,
+                transform.position + Vector3.up * playerHeight,
+                playerRadius,
+                moveDirX, 
+                moveDistance,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && !colliderCasted;
 
             if (canMove) {
                 // Can move only on the X
@@ -156,7 +177,14 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
                 // Attempt only Z movement
                 Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
+                colliderCasted = Physics.CapsuleCast(transform.position, 
+                    transform.position + Vector3.up * playerHeight, 
+                    playerRadius, 
+                    moveDirZ, 
+                    moveDistance,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Ignore);
+                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && !colliderCasted;
 
                 if (canMove) {
                     // Can move only on the Z

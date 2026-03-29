@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Cinemachine; // Note: Use 'Unity.Cinemachine' and 'CinemachineCamera' if using Unity 6 / CM 3.x
+using Cinemachine;
 
 [RequireComponent(typeof(Collider))]
 public class RoomCameraTrigger : MonoBehaviour

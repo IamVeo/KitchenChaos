@@ -6,14 +6,7 @@ using UnityEngine.AI;
 public class Enemy : MonoBehaviour, IHasProgress {
     public event EventHandler<IHasProgress.OnProgressChangedEventArgs> OnProgressChanged;
 
-    private enum State {
-        WalkingToTable,
-        WaitingForFood,
-        AttackingPlayer,
-        Leaving
-    }
-
-    private State currentState;
+    private EnemyState currentEnemyState;
     private NavMeshAgent navMeshAgent;
     private TableCounter targetTable;
     private Transform targetTableSeat;
@@ -41,11 +34,11 @@ public class Enemy : MonoBehaviour, IHasProgress {
         healthManager.SetMaxHealth(enemyData.maxHealth);
         healthManager.OnDied += HealthManager_OnDied;
 
-        currentState = State.WalkingToTable;
+        currentEnemyState = EnemyState.WalkingToTable;
     }
 
     private void HealthManager_OnDied(object sender, EventArgs e) {
-        if (currentState == State.WalkingToTable || currentState == State.WaitingForFood) {
+        if (currentEnemyState == EnemyState.WalkingToTable || currentEnemyState == EnemyState.WaitingForFood) {
             EnemySpawnManager.Instance.FreeTable(targetTable);
         }
 
@@ -54,17 +47,17 @@ public class Enemy : MonoBehaviour, IHasProgress {
     }
 
     private void Update() {
-        switch (currentState) {
-            case State.WalkingToTable:
+        switch (currentEnemyState) {
+            case EnemyState.WalkingToTable:
                 HandleWalkingToTable();
                 break;
-            case State.WaitingForFood:
+            case EnemyState.WaitingForFood:
                 HandleWaitingForFood();
                 break;
-            case State.AttackingPlayer:
+            case EnemyState.AttackingPlayer:
                 HandleAttackingPlayer();
                 break;
-            case State.Leaving:
+            case EnemyState.Leaving:
                 break;
         }
     }
@@ -76,7 +69,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
         if (!navMeshAgent.pathPending && navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance) {
             navMeshAgent.isStopped = true;
-            currentState = State.WaitingForFood;
+            currentEnemyState = EnemyState.WaitingForFood;
             patienceTimer = enemyData.patienceMax;
 
             waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
@@ -126,7 +119,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
     }
 
     public void Leave() {
-        currentState = State.Leaving;
+        currentEnemyState = EnemyState.Leaving;
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = 0f
@@ -138,7 +131,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
     }
 
     public void Enrage() {
-        currentState = State.AttackingPlayer;
+        currentEnemyState = EnemyState.AttackingPlayer;
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = 0f
@@ -149,7 +142,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
     }
 
     public bool TryDeliverFood(PlateKitchenObject plateKitchenObject) {
-        if (currentState != State.WaitingForFood) return false;
+        if (currentEnemyState != EnemyState.WaitingForFood) return false;
         
         if(DeliveryManager.Instance.IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
             DeliveryManager.Instance.AddSuccessfulDelivery();
@@ -166,6 +159,6 @@ public class Enemy : MonoBehaviour, IHasProgress {
     }
 
     public bool IsWaitingForFood() {
-        return currentState == State.WaitingForFood;
+        return currentEnemyState == EnemyState.WaitingForFood;
     }
 }
