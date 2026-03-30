@@ -23,13 +23,13 @@ public class EnemySpawnManager : MonoBehaviour {
     private void Start() {
         spawnTimer = spawnTimerMax;
     }
-
     private void Update() {
-        spawnTimer -= Time.deltaTime;
-        if (spawnTimer <= 0f) {
-            spawnTimer = spawnTimerMax;
+        if (currentEnemyCount < maxEnemies && availableTableList.Count > 0) {
 
-            if (currentEnemyCount < maxEnemies && availableTableList.Count > 0) {
+            spawnTimer -= Time.deltaTime;
+
+            if (spawnTimer <= 0f) {
+                spawnTimer = spawnTimerMax;
                 SpawnEnemy();
             }
         }
@@ -54,6 +54,7 @@ public class EnemySpawnManager : MonoBehaviour {
     public void FreeTable(TableCounter tableToFree) {
         if (!availableTableList.Contains(tableToFree)) {
             availableTableList.Add(tableToFree);
+            tableToFree.ClearTable();
             currentEnemyCount--;
         }
     }

@@ -71,8 +71,8 @@ public class HealthManager : MonoBehaviour, IDamageable {
         if (TryGetComponent<Player>(out Player player)) {
             player.ReceiveKnockback(damageDirection.normalized);
         }
-        else if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
-            rb.AddForce(damageDirection.normalized * 5f, ForceMode.Impulse);
+        else if (TryGetComponent<Enemy>(out Enemy enemy)) {
+            enemy.ReceiveKnockback(damageDirection.normalized);
         }
     }
 }

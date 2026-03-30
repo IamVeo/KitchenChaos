@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -24,12 +25,15 @@ public class Enemy : MonoBehaviour, IHasProgress {
         healthManager = GetComponent<HealthManager>();
     }
 
+    public bool IsAttackingPlayer() => currentEnemyState == EnemyState.AttackingPlayer;
+
     public void Setup(TableCounter table, EnemyDataSO data) {
         targetTable = table;
         targetTableSeat = table.GetSeatPoint();
         enemyData = data;
 
         navMeshAgent.speed = enemyData.moveSpeed;
+        navMeshAgent.stoppingDistance = 0f;
 
         healthManager.SetMaxHealth(enemyData.maxHealth);
         healthManager.OnDied += HealthManager_OnDied;
@@ -47,6 +51,8 @@ public class Enemy : MonoBehaviour, IHasProgress {
     }
 
     private void Update() {
+        if (!navMeshAgent.enabled && currentEnemyState != EnemyState.WaitingForFood) return;
+
         switch (currentEnemyState) {
             case EnemyState.WalkingToTable:
                 HandleWalkingToTable();
@@ -69,10 +75,17 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
         if (!navMeshAgent.pathPending && navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance) {
             navMeshAgent.isStopped = true;
+            navMeshAgent.enabled = false;
+
+            if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
+                rb.constraints = RigidbodyConstraints.FreezeAll;
+            }
+
             currentEnemyState = EnemyState.WaitingForFood;
             patienceTimer = enemyData.patienceMax;
 
             waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
+            DeliveryManager.Instance.AddWaitingRecipe(waitingRecipeSO);
 
             targetTable.SeatEnemy(this, waitingRecipeSO);
         }
@@ -93,6 +106,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     private void HandleAttackingPlayer() {
         navMeshAgent.isStopped = false;
+        navMeshAgent.stoppingDistance = 0.8f;
         Vector3 playerPosition = Player.Instance.transform.position;
         navMeshAgent.SetDestination(playerPosition);
 
@@ -102,7 +116,10 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
         if (Vector3.Distance(transform.position, playerPosition) <= enemyData.attackRange) {
             navMeshAgent.isStopped = true;
-            transform.LookAt(playerPosition);
+
+            Vector3 lookAtPosition = playerPosition;
+            lookAtPosition.y = transform.position.y; 
+            transform.LookAt(lookAtPosition);
 
             if (attackCooldownTimer <= 0f) {
                 AttackPlayer();
@@ -120,11 +137,17 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     public void Leave() {
         currentEnemyState = EnemyState.Leaving;
+        navMeshAgent.enabled = true;
+
+        if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+        }
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = 0f
         });
 
+        DeliveryManager.Instance.RemoveWaitingRecipe(waitingRecipeSO);
         targetTable.ClearTable();
         EnemySpawnManager.Instance.FreeTable(targetTable);
         Destroy(gameObject);
@@ -132,11 +155,20 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     public void Enrage() {
         currentEnemyState = EnemyState.AttackingPlayer;
+        navMeshAgent.enabled = true;
+        navMeshAgent.stoppingDistance = 0.8f; // Trả lại phanh 0.8 mét
+
+        // THÊM ĐOẠN NÀY: Mở khóa vị trí, chỉ giữ lại khóa góc xoay (như cũ)
+        if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+        }
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = 0f
         });
 
+
+        DeliveryManager.Instance.RemoveWaitingRecipe(waitingRecipeSO);
         targetTable.ClearTable();
         EnemySpawnManager.Instance.FreeTable(targetTable);
     }
@@ -146,6 +178,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
         
         if(DeliveryManager.Instance.IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
             DeliveryManager.Instance.AddSuccessfulDelivery();
+            DeliveryManager.Instance.RemoveWaitingRecipe(waitingRecipeSO); // XÓA ORDER
             targetTable.ClearTable();
 
             Leave();
@@ -160,5 +193,34 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     public bool IsWaitingForFood() {
         return currentEnemyState == EnemyState.WaitingForFood;
+    }
+
+    public void ReceiveKnockback(Vector3 knockbackDir) {
+        // Chạy luồng xử lý thời gian độc lập
+        StartCoroutine(KnockbackRoutine(knockbackDir));
+    }
+
+    private IEnumerator KnockbackRoutine(Vector3 knockbackDir) {
+        navMeshAgent.enabled = false;
+
+        if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
+            rb.isKinematic = false;
+            rb.velocity = Vector3.zero;
+
+            rb.AddForce(knockbackDir * 10f, ForceMode.Impulse);
+        }
+
+        yield return new WaitForSeconds(0.2f);
+
+        if (TryGetComponent<Rigidbody>(out Rigidbody rb2)) {
+            rb2.isKinematic = true; 
+        }
+
+        if (this != null) {
+            navMeshAgent.enabled = true;
+            if (navMeshAgent.isOnNavMesh) {
+                navMeshAgent.ResetPath();
+            }
+        }
     }
 }
