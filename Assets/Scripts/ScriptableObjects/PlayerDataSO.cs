@@ -5,6 +5,9 @@ public class PlayerDataSO : ScriptableObject
 {
     [Header("Movement")]
     public float moveSpeed;
+    public float playerHeight;
+    public float playerRadius;
+ 
     
     [Header("Combat")]
     public float attackDelay;

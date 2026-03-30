@@ -10,12 +10,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     [SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
-
-    [Header("Combat Stats")]
     [SerializeField] private LayerMask enemyLayerMask;
-    [SerializeField] private int attackDamage = 30;
-    [SerializeField] private float attackRange = 1f;
-    [SerializeField] private float hitRadius = 1.2f;
 
     public event EventHandler OnPickedSomething;
     public event EventHandler OnAttacking;
@@ -25,8 +20,19 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         public BaseCounter selectedCounter;
     }
 
+    // ---------- movement
     public float MoveSpeed => playerDataSO.moveSpeed;
+    public float PlayerHeight => playerDataSO.playerHeight;
+    public float PlayerRadius => playerDataSO.playerRadius;
     public float AttackDelay => playerDataSO.attackDelay;
+    
+    // ----------- combat
+    public int AttackDamage => playerDataSO.attackDamage;
+    public float AttackRange => playerDataSO.attackRange;
+    public float HitRadius => playerDataSO.hitRadius;
+    
+    // ----------- interaction
+    public float InteractDistance => playerDataSO.interactDistance;
 
     private bool isWalking;
     private bool isAttacking;
@@ -92,14 +98,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     
     // ======================= Handle Player Input and Interactions =======================
 
-    private Vector3 GetMovementDirection()
-    {
-        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
-
-        Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
-
-        return moveDir;
-    }
+    public bool IsWalking() => isWalking;
+    public bool IsAttacking() => isAttacking;
     
     private void Update() {
         if (knockbackTimer > 0) {
@@ -111,19 +111,45 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         HandleMovement();
         HandleInteractions();
     }
+    
+    private Vector3 GetMovementDirection()
+    {
+        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
 
-    public bool IsWalking() => isWalking;
-    public bool IsAttacking() => isAttacking;
+        Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
 
+        return moveDir;
+    }
+
+    private (bool canMove, RaycastHit raycastHit) ColliderCast(Vector3 dir, float distance, LayerMask layerMask)
+    {
+        bool colliderCasted = Physics.CapsuleCast(transform.position,
+            transform.position + Vector3.up * PlayerHeight,
+            PlayerRadius,
+            dir, 
+            out RaycastHit raycastHit,
+            distance,
+            layerMask,
+            QueryTriggerInteraction.Ignore);
+        return (!colliderCasted, raycastHit);
+    }
+
+    private void HandleRotation(Vector3 dir)
+    {
+        float rotateSpeed = 10f;
+        transform.forward = Vector3.Slerp(transform.forward, dir, Time.deltaTime * rotateSpeed);
+    }
+    
     private void HandleInteractions() {
         Vector3 moveDir = GetMovementDirection();
 
         if (moveDir != Vector3.zero) {
             lastInteractDir = moveDir;
         }
-
-        float interactDistance = 2f;
-        if (Physics.Raycast(transform.position, lastInteractDir, out RaycastHit raycastHit, interactDistance, countersLayerMask)) {
+        
+        var (canMove, raycastHit) = ColliderCast(lastInteractDir, InteractDistance, countersLayerMask);
+        
+        if (!canMove) {
             if (raycastHit.transform.TryGetComponent(out BaseCounter baseCounter)) {
                 // Has ClearCounter
                 if (baseCounter != selectedCounter) {
@@ -142,32 +168,16 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         Vector3 moveDir = GetMovementDirection();
 
         float moveDistance = MoveSpeed * Time.deltaTime;
-        float playerRadius = .7f;
-        float playerHeight = 2f;
-        
-        bool colliderCasted = Physics.CapsuleCast(
-            transform.position, 
-            transform.position + Vector3.up * playerHeight, 
-            playerRadius, 
-            moveDir, 
-            moveDistance,
-            Physics.DefaultRaycastLayers,
-            QueryTriggerInteraction.Ignore);
-        bool canMove = !colliderCasted;
+
+        var (canMove, _) = ColliderCast(moveDir, moveDistance, Physics.DefaultRaycastLayers);
 
         if (!canMove) {
             // Cannot move towards moveDir
 
             // Attempt only X movement
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            colliderCasted = Physics.CapsuleCast(transform.position,
-                transform.position + Vector3.up * playerHeight,
-                playerRadius,
-                moveDirX, 
-                moveDistance,
-                Physics.DefaultRaycastLayers,
-                QueryTriggerInteraction.Ignore);
-            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && !colliderCasted;
+            (canMove, _) = ColliderCast(moveDirX, moveDistance, Physics.DefaultRaycastLayers);
+            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && canMove;
 
             if (canMove) {
                 // Can move only on the X
@@ -177,14 +187,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
                 // Attempt only Z movement
                 Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-                colliderCasted = Physics.CapsuleCast(transform.position, 
-                    transform.position + Vector3.up * playerHeight, 
-                    playerRadius, 
-                    moveDirZ, 
-                    moveDistance,
-                    Physics.DefaultRaycastLayers,
-                    QueryTriggerInteraction.Ignore);
-                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && !colliderCasted;
+                (canMove, _) = ColliderCast(moveDirZ, moveDistance, Physics.DefaultRaycastLayers);
+                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && canMove;
 
                 if (canMove) {
                     // Can move only on the Z
@@ -201,20 +205,17 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
         isWalking = moveDir != Vector3.zero;
 
-        float rotateSpeed = 10f;
-        transform.forward = Vector3.Slerp(transform.forward, moveDir, Time.deltaTime * rotateSpeed);
+        HandleRotation(moveDir);
     }
 
     private void HandleKnockback() {
         knockbackTimer -= Time.deltaTime;
 
         float moveDistance = knockbackSpeed * Time.deltaTime;
-        float playerRadius = .7f;
-        float playerHeight = 2f;
 
-        bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, knockbackVector, moveDistance);
+        bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * PlayerHeight, PlayerRadius, knockbackVector, moveDistance);
 
-        if (canMove) {
+        if (!canMove) {
             transform.position += knockbackVector * moveDistance;
         }
     }
@@ -246,15 +247,15 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private void Attack() {
         OnAttacking?.Invoke(this, EventArgs.Empty);
 
-        Vector3 hitCenter = transform.position + lastInteractDir * attackRange;
+        Vector3 hitCenter = transform.position + lastInteractDir * AttackRange;
 
-        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, hitRadius, enemyLayerMask);
+        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, HitRadius, enemyLayerMask);
 
         foreach(Collider hitCollider in hitColliders) {
             if (hitCollider.TryGetComponent<IDamageable>(out IDamageable damageableTarget)) {
                 Vector3 knockbackDirection = hitCollider.transform.position - transform.position;
 
-                damageableTarget.TakeDamage(attackDamage, lastInteractDir);
+                damageableTarget.TakeDamage(AttackDamage, lastInteractDir);
             }
         }
     }
@@ -265,9 +266,9 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
     private void OnDrawGizmosSelected() {
         Vector3 direction = lastInteractDir == Vector3.zero ? transform.forward : lastInteractDir;
-        Vector3 hitCenter = transform.position + direction * attackRange;
+        Vector3 hitCenter = transform.position + direction * AttackRange;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(hitCenter, hitRadius);
+        Gizmos.DrawWireSphere(hitCenter, HitRadius);
     }
 }
