@@ -14,7 +14,7 @@ public class HealthManager : MonoBehaviour, IDamageable {
     [SerializeField] private int maxHealth = 100;
     private int currentHealth;
 
-    [SerializeField] private float invulnerabilityDuration = 2f;
+    [SerializeField] private float invulnerabilityDuration = .3f;
     private float invulnerabilityTimer;
 
     private void Awake() {
@@ -48,7 +48,7 @@ public class HealthManager : MonoBehaviour, IDamageable {
             healthNormalized = (float)currentHealth / maxHealth 
         });
 
-        // ApplyKnockback(damageDirection);
+        ApplyKnockback(damageDirection);
 
         invulnerabilityTimer = invulnerabilityDuration;
 
@@ -66,9 +66,12 @@ public class HealthManager : MonoBehaviour, IDamageable {
     }
 
     private void ApplyKnockback(Vector3 damageDirection) {
-        Debug.Log("Applying knockback!");
-        if(TryGetComponent(out Rigidbody rb)) {
-            damageDirection.y = 0;
+        damageDirection.y = 0;
+
+        if (TryGetComponent<Player>(out Player player)) {
+            player.ReceiveKnockback(damageDirection.normalized);
+        }
+        else if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
             rb.AddForce(damageDirection.normalized * 5f, ForceMode.Impulse);
         }
     }

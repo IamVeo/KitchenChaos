@@ -10,13 +10,12 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     [SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
-    public float InteractDistance => playerDataSO.interactDistance;
 
     [Header("Combat Stats")]
     [SerializeField] private LayerMask enemyLayerMask;
-    public int AttackDamage => playerDataSO.attackDamage;
-    public float AttackRange => playerDataSO.attackRange;
-    public float HitRadius => playerDataSO.hitRadius; 
+    [SerializeField] private int attackDamage = 30;
+    [SerializeField] private float attackRange = 1f;
+    [SerializeField] private float hitRadius = 1.2f;
 
     public event EventHandler OnPickedSomething;
     public event EventHandler OnAttacking;
@@ -34,26 +33,31 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private Vector3 lastInteractDir;
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
-    private HealthManager healthManager;
+
+    private Vector3 knockbackVector;
+    private float knockbackTimer;
+    private float knockbackDuration = 0.2f;
+    private float knockbackSpeed = 15f;
 
     private void Awake() {
         if (Instance != null) {
             Debug.LogError("There is more than one Player instance");
         }
         Instance = this;
-        healthManager = GetComponent<HealthManager>();
     }
 
     private void Start() {
         gameInput.OnInteractAction += GameInput_OnInteractAction;
         gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
         gameInput.OnAttackAction += GameInput_OnAttackAction;
-        healthManager.OnDied += HealthManager_OnDied;
 
+        if (TryGetComponent<HealthManager>(out HealthManager healthManager)){
+            healthManager.OnDied += HealthManager_OnDied;
+        }
     }
 
     private void HealthManager_OnDied(object sender, EventArgs e) {
-        Destroy(gameObject);
+        KitchenGameManager.Instance.SetGameOver();
     }
 
     private void GameInput_OnAttackAction(object sender, EventArgs e) {
@@ -85,9 +89,25 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
             selectedCounter.Interact(this);
         }
     }
+    
+    // ======================= Handle Player Input and Interactions =======================
 
-    private void Update()
+    private Vector3 GetMovementDirection()
     {
+        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
+
+        Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
+
+        return moveDir;
+    }
+    
+    private void Update() {
+        if (knockbackTimer > 0) {
+            HandleKnockback();
+            return;
+        }
+
+        if (isAttacking) return;
         HandleMovement();
         HandleInteractions();
     }
@@ -96,15 +116,14 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     public bool IsAttacking() => isAttacking;
 
     private void HandleInteractions() {
-        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
-
-        Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
+        Vector3 moveDir = GetMovementDirection();
 
         if (moveDir != Vector3.zero) {
             lastInteractDir = moveDir;
         }
-        
-        if (Physics.Raycast(transform.position, lastInteractDir, out RaycastHit raycastHit, InteractDistance, countersLayerMask)) {
+
+        float interactDistance = 2f;
+        if (Physics.Raycast(transform.position, lastInteractDir, out RaycastHit raycastHit, interactDistance, countersLayerMask)) {
             if (raycastHit.transform.TryGetComponent(out BaseCounter baseCounter)) {
                 // Has ClearCounter
                 if (baseCounter != selectedCounter) {
@@ -120,21 +139,35 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     }
 
     private void HandleMovement() {
-        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
-
-        Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
+        Vector3 moveDir = GetMovementDirection();
 
         float moveDistance = MoveSpeed * Time.deltaTime;
         float playerRadius = .7f;
         float playerHeight = 2f;
-        bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDir, moveDistance);
+        
+        bool colliderCasted = Physics.CapsuleCast(
+            transform.position, 
+            transform.position + Vector3.up * playerHeight, 
+            playerRadius, 
+            moveDir, 
+            moveDistance,
+            Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore);
+        bool canMove = !colliderCasted;
 
         if (!canMove) {
             // Cannot move towards moveDir
 
             // Attempt only X movement
             Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirX, moveDistance);
+            colliderCasted = Physics.CapsuleCast(transform.position,
+                transform.position + Vector3.up * playerHeight,
+                playerRadius,
+                moveDirX, 
+                moveDistance,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && !colliderCasted;
 
             if (canMove) {
                 // Can move only on the X
@@ -144,7 +177,14 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
                 // Attempt only Z movement
                 Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDirZ, moveDistance);
+                colliderCasted = Physics.CapsuleCast(transform.position, 
+                    transform.position + Vector3.up * playerHeight, 
+                    playerRadius, 
+                    moveDirZ, 
+                    moveDistance,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Ignore);
+                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && !colliderCasted;
 
                 if (canMove) {
                     // Can move only on the Z
@@ -163,6 +203,20 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
         float rotateSpeed = 10f;
         transform.forward = Vector3.Slerp(transform.forward, moveDir, Time.deltaTime * rotateSpeed);
+    }
+
+    private void HandleKnockback() {
+        knockbackTimer -= Time.deltaTime;
+
+        float moveDistance = knockbackSpeed * Time.deltaTime;
+        float playerRadius = .7f;
+        float playerHeight = 2f;
+
+        bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, knockbackVector, moveDistance);
+
+        if (canMove) {
+            transform.position += knockbackVector * moveDistance;
+        }
     }
 
     private void SetSelectedCounter(BaseCounter selectedCounter) {
@@ -192,33 +246,28 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private void Attack() {
         OnAttacking?.Invoke(this, EventArgs.Empty);
 
-        Vector3 hitCenter = transform.position + lastInteractDir * AttackRange;
+        Vector3 hitCenter = transform.position + lastInteractDir * attackRange;
 
-        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, HitRadius, enemyLayerMask);
+        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, hitRadius, enemyLayerMask);
 
         foreach(Collider hitCollider in hitColliders) {
-            if (hitCollider.TryGetComponent(out IDamageable damageableTarget)) {
+            if (hitCollider.TryGetComponent<IDamageable>(out IDamageable damageableTarget)) {
                 Vector3 knockbackDirection = hitCollider.transform.position - transform.position;
 
-                damageableTarget.TakeDamage(AttackDamage, knockbackDirection);
+                damageableTarget.TakeDamage(attackDamage, lastInteractDir);
             }
         }
+    }
+    public void ReceiveKnockback(Vector3 knockbackDir) {
+        knockbackVector = knockbackDir;
+        knockbackTimer = knockbackDuration;
     }
 
     private void OnDrawGizmosSelected() {
         Vector3 direction = lastInteractDir == Vector3.zero ? transform.forward : lastInteractDir;
-        Vector3 hitCenter = transform.position + direction * AttackRange;
+        Vector3 hitCenter = transform.position + direction * attackRange;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(hitCenter, HitRadius);
-    }
-
-
-    private void OnDestroy()
-    {
-        gameInput.OnInteractAction -= GameInput_OnInteractAction;
-        gameInput.OnInteractAlternateAction -= GameInput_OnInteractAlternateAction;
-        gameInput.OnAttackAction -= GameInput_OnAttackAction;
-        healthManager.OnDied -= HealthManager_OnDied;
+        Gizmos.DrawWireSphere(hitCenter, hitRadius);
     }
 }
