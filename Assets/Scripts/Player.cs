@@ -10,12 +10,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     [SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
-
-    [Header("Combat Stats")]
     [SerializeField] private LayerMask enemyLayerMask;
-    [SerializeField] private int attackDamage = 30;
-    [SerializeField] private float attackRange = 1f;
-    [SerializeField] private float hitRadius = 1.2f;
 
     public event EventHandler OnPickedSomething;
     public event EventHandler OnAttacking;
@@ -25,9 +20,20 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         public BaseCounter selectedCounter;
     }
 
+    // ----------- movement
     public float MoveSpeed => playerDataSO.moveSpeed;
+    public float PlayerHeight => playerDataSO.playerHeight;
+    public float PlayerRadius => playerDataSO.playerRadius;
+    
+    // ----------- combat
+    public int AttackDamage => playerDataSO.attackDamage;
+    public float AttackRange => playerDataSO.attackRange;
+    public float HitRadius => playerDataSO.hitRadius;
     public float AttackDelay => playerDataSO.attackDelay;
 
+    // ----------- interactions
+    public float InteractDistance => playerDataSO.interactDistance;
+    
     private bool isWalking;
     private bool isAttacking;
     private Vector3 lastInteractDir;
@@ -212,8 +218,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private void Attack() {
         OnAttacking?.Invoke(this, EventArgs.Empty);
 
-        Vector3 hitCenter = transform.position + lastInteractDir * attackRange;
-        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, hitRadius, enemyLayerMask);
+        Vector3 hitCenter = transform.position + lastInteractDir * AttackRange;
+        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, HitRadius, enemyLayerMask);
 
         foreach (Collider hitCollider in hitColliders) {
             if (hitCollider.TryGetComponent<IDamageable>(out IDamageable damageableTarget)) {
@@ -228,16 +234,16 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
                 }
 
                 Vector3 knockbackDirection = hitCollider.transform.position - transform.position;
-                damageableTarget.TakeDamage(attackDamage, knockbackDirection.normalized);
+                damageableTarget.TakeDamage(AttackDamage, knockbackDirection.normalized);
             }
         }
     }
 
     private void OnDrawGizmosSelected() {
         Vector3 direction = lastInteractDir == Vector3.zero ? transform.forward : lastInteractDir;
-        Vector3 hitCenter = transform.position + direction * attackRange;
+        Vector3 hitCenter = transform.position + direction * AttackRange;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(hitCenter, hitRadius);
+        Gizmos.DrawWireSphere(hitCenter, HitRadius);
     }
 }
