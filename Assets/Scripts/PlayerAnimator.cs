@@ -29,7 +29,7 @@ public class PlayerAnimator : MonoBehaviour {
 
     private void Player_OnAttacking(object sender, EventArgs e)
     {
-        animator.SetTrigger("Attack");
+        // animator.SetTrigger("Attack");
     }
 
 }

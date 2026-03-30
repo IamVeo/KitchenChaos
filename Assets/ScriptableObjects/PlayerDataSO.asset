@@ -12,5 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f873d4f5bec573b49aa94b35a59d4322, type: 3}
   m_Name: PlayerDataSO
   m_EditorClassIdentifier: 
-  moveSpeed: 7
-  attackDelay: 0.3
+  moveSpeed: 5.5
+  playerHeight: 2
+  playerRadius: 0.7
+  attackDelay: 0.15
+  attackDamage: 30
+  attackRange: 1
+  hitRadius: 1.2
+  interactDistance: 2
