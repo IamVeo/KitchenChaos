@@ -10,7 +10,12 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     [SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
+
+    [Header("Combat Stats")]
     [SerializeField] private LayerMask enemyLayerMask;
+    [SerializeField] private int attackDamage = 30;
+    [SerializeField] private float attackRange = 1f;
+    [SerializeField] private float hitRadius = 1.2f;
 
     public event EventHandler OnPickedSomething;
     public event EventHandler OnAttacking;
@@ -20,19 +25,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         public BaseCounter selectedCounter;
     }
 
-    // ---------- movement
     public float MoveSpeed => playerDataSO.moveSpeed;
-    public float PlayerHeight => playerDataSO.playerHeight;
-    public float PlayerRadius => playerDataSO.playerRadius;
     public float AttackDelay => playerDataSO.attackDelay;
-    
-    // ----------- combat
-    public int AttackDamage => playerDataSO.attackDamage;
-    public float AttackRange => playerDataSO.attackRange;
-    public float HitRadius => playerDataSO.hitRadius;
-    
-    // ----------- interaction
-    public float InteractDistance => playerDataSO.interactDistance;
 
     private bool isWalking;
     private bool isAttacking;
@@ -40,16 +34,19 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
 
-    private Vector3 knockbackVector;
     private float knockbackTimer;
-    private float knockbackDuration = 0.2f;
-    private float knockbackSpeed = 15f;
+    private float knockbackDuration = 0.4f;
+    private float knockbackSpeed = 5f;
+
+    private Rigidbody rb;
 
     private void Awake() {
         if (Instance != null) {
             Debug.LogError("There is more than one Player instance");
         }
         Instance = this;
+
+        rb = GetComponent<Rigidbody>();
     }
 
     private void Start() {
@@ -98,22 +95,43 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     
     // ======================= Handle Player Input and Interactions =======================
 
-    public bool IsWalking() => isWalking;
-    public bool IsAttacking() => isAttacking;
-    
     private void Update() {
+        // 1. Cập nhật Timer
         if (knockbackTimer > 0) {
-            HandleKnockback();
+            knockbackTimer -= Time.deltaTime;
+            isWalking = false; // NGĂN LỖI KẸT ANIMATION ĐI BỘ
             return;
         }
 
-        if (isAttacking) return;
-        HandleMovement();
+        if (isAttacking) {
+            isWalking = false; // NGĂN LỖI KẸT ANIMATION ĐI BỘ
+            return;
+        }
+
+        // 2. Xử lý logic tương tác (Raycast không ảnh hưởng đến di chuyển vật lý)
         HandleInteractions();
+
+        // 3. Xử lý Input và Xoay nhân vật (Nên làm ở Update để mượt mà)
+        Vector3 moveDir = GetMovementDirection();
+        isWalking = moveDir != Vector3.zero;
+
+        if (moveDir != Vector3.zero) {
+            float rotateSpeed = 10f;
+            transform.forward = Vector3.Slerp(transform.forward, moveDir, Time.deltaTime * rotateSpeed);
+        }
     }
-    
-    private Vector3 GetMovementDirection()
-    {
+
+    private void FixedUpdate() {
+        // Chỉ chạy vật lý di chuyển khi không bị choáng và không đánh nhau
+        if (knockbackTimer > 0 || isAttacking) return;
+
+        HandleMovement();
+    }
+
+    public bool IsWalking() => isWalking;
+    public bool IsAttacking() => isAttacking;
+
+    private Vector3 GetMovementDirection() {
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
 
         Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
@@ -121,43 +139,27 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         return moveDir;
     }
 
-    private (bool canMove, RaycastHit raycastHit) ColliderCast(Vector3 dir, float distance, LayerMask layerMask)
-    {
-        bool colliderCasted = Physics.CapsuleCast(transform.position,
-            transform.position + Vector3.up * PlayerHeight,
-            PlayerRadius,
-            dir, 
-            out RaycastHit raycastHit,
-            distance,
-            layerMask,
-            QueryTriggerInteraction.Ignore);
-        return (!colliderCasted, raycastHit);
-    }
-
-    private void HandleRotation(Vector3 dir)
-    {
-        float rotateSpeed = 10f;
-        transform.forward = Vector3.Slerp(transform.forward, dir, Time.deltaTime * rotateSpeed);
-    }
-    
     private void HandleInteractions() {
         Vector3 moveDir = GetMovementDirection();
 
         if (moveDir != Vector3.zero) {
             lastInteractDir = moveDir;
         }
-        
-        var (canMove, raycastHit) = ColliderCast(lastInteractDir, InteractDistance, countersLayerMask);
-        
-        if (!canMove) {
+
+        Vector3 interactDir = lastInteractDir == Vector3.zero ? transform.forward : lastInteractDir;
+
+        float interactDistance = 1f;
+
+        float sphereRadius = 0.3f;
+
+        // Bắn SphereCast (Gọn gàng hơn BoxCast rất nhiều vì không cần tính góc xoay Quaternion)
+        if (Physics.SphereCast(transform.position, sphereRadius, interactDir, out RaycastHit raycastHit, interactDistance, countersLayerMask)) {
             if (raycastHit.transform.TryGetComponent(out BaseCounter baseCounter)) {
-                // Has ClearCounter
                 if (baseCounter != selectedCounter) {
                     SetSelectedCounter(baseCounter);
                 }
             } else {
                 SetSelectedCounter(null);
-
             }
         } else {
             SetSelectedCounter(null);
@@ -167,59 +169,22 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private void HandleMovement() {
         Vector3 moveDir = GetMovementDirection();
 
-        float moveDistance = MoveSpeed * Time.deltaTime;
-
-        var (canMove, _) = ColliderCast(moveDir, moveDistance, Physics.DefaultRaycastLayers);
-
-        if (!canMove) {
-            // Cannot move towards moveDir
-
-            // Attempt only X movement
-            Vector3 moveDirX = new Vector3(moveDir.x, 0, 0).normalized;
-            (canMove, _) = ColliderCast(moveDirX, moveDistance, Physics.DefaultRaycastLayers);
-            canMove = (moveDir.x < -.5f || moveDir.x > +.5f) && canMove;
-
-            if (canMove) {
-                // Can move only on the X
-                moveDir = moveDirX;
-            } else {
-                // Cannot move only on the X
-
-                // Attempt only Z movement
-                Vector3 moveDirZ = new Vector3(0, 0, moveDir.z).normalized;
-                (canMove, _) = ColliderCast(moveDirZ, moveDistance, Physics.DefaultRaycastLayers);
-                canMove = (moveDir.z < -.5f || moveDir.z > +.5f) && canMove;
-
-                if (canMove) {
-                    // Can move only on the Z
-                    moveDir = moveDirZ;
-                } else {
-                    // Cannot move in any direction
-                }
-            }
-        }
-
-        if (canMove) {
-            transform.position += moveDir * moveDistance;
-        }
-
-        isWalking = moveDir != Vector3.zero;
-
-        HandleRotation(moveDir);
+        rb.velocity = moveDir * MoveSpeed;
     }
 
-    private void HandleKnockback() {
-        knockbackTimer -= Time.deltaTime;
+    public void ReceiveKnockback(Vector3 knockbackDir) {
+        // Chỉ nhận lực mới nếu lực cũ đã hết (tránh cộng dồn)
+        if (knockbackTimer <= 0) {
+            knockbackTimer = knockbackDuration;
 
-        float moveDistance = knockbackSpeed * Time.deltaTime;
+            // Xóa đà di chuyển cũ (nếu có) để lực đẩy được chính xác
+            rb.velocity = Vector3.zero;
 
-        bool canMove = !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * PlayerHeight, PlayerRadius, knockbackVector, moveDistance);
-
-        if (!canMove) {
-            transform.position += knockbackVector * moveDistance;
+            // Bắn ra một lực Impulse
+            rb.AddForce(knockbackDir * knockbackSpeed, ForceMode.Impulse);
         }
     }
-
+        
     private void SetSelectedCounter(BaseCounter selectedCounter) {
         this.selectedCounter = selectedCounter;
 
@@ -247,28 +212,32 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private void Attack() {
         OnAttacking?.Invoke(this, EventArgs.Empty);
 
-        Vector3 hitCenter = transform.position + lastInteractDir * AttackRange;
+        Vector3 hitCenter = transform.position + lastInteractDir * attackRange;
+        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, hitRadius, enemyLayerMask);
 
-        Collider[] hitColliders = Physics.OverlapSphere(hitCenter, HitRadius, enemyLayerMask);
-
-        foreach(Collider hitCollider in hitColliders) {
+        foreach (Collider hitCollider in hitColliders) {
             if (hitCollider.TryGetComponent<IDamageable>(out IDamageable damageableTarget)) {
-                Vector3 knockbackDirection = hitCollider.transform.position - transform.position;
 
-                damageableTarget.TakeDamage(AttackDamage, lastInteractDir);
+                // THÊM KIỂM TRA QUÁI Ở ĐÂY:
+                if (hitCollider.TryGetComponent<Enemy>(out Enemy enemy)) {
+                    // Nếu khách đang không đánh mình (tức là đang đi tìm bàn hoặc đang chờ món)
+                    if (!enemy.IsAttackingPlayer()) {
+                        enemy.Enrage(); // Làm nó nổi điên hủy đơn luôn
+                        continue;       // Bỏ qua lực đẩy lùi vì nó đang bị khóa FreezeAll
+                    }
+                }
+
+                Vector3 knockbackDirection = hitCollider.transform.position - transform.position;
+                damageableTarget.TakeDamage(attackDamage, knockbackDirection.normalized);
             }
         }
-    }
-    public void ReceiveKnockback(Vector3 knockbackDir) {
-        knockbackVector = knockbackDir;
-        knockbackTimer = knockbackDuration;
     }
 
     private void OnDrawGizmosSelected() {
         Vector3 direction = lastInteractDir == Vector3.zero ? transform.forward : lastInteractDir;
-        Vector3 hitCenter = transform.position + direction * AttackRange;
+        Vector3 hitCenter = transform.position + direction * attackRange;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(hitCenter, HitRadius);
+        Gizmos.DrawWireSphere(hitCenter, hitRadius);
     }
 }

@@ -7,6 +7,10 @@ public class DeliveryManager : MonoBehaviour {
 
     public event EventHandler OnRecipeSuccess;
     public event EventHandler OnRecipeFailed;
+    public event EventHandler OnRecipeSpawned;
+    public event EventHandler OnRecipeCompleted;
+
+    private List<RecipeSO> waitingRecipeSOList = new List<RecipeSO>();
 
     public static DeliveryManager Instance { get; private set; }
 
@@ -24,6 +28,20 @@ public class DeliveryManager : MonoBehaviour {
 
     public void AddFailedDelivery() {
         OnRecipeFailed?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void AddWaitingRecipe(RecipeSO recipe) {
+        waitingRecipeSOList.Add(recipe);
+        OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void RemoveWaitingRecipe(RecipeSO recipe) {
+        waitingRecipeSOList.Remove(recipe);
+        OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
+    }
+
+    public List<RecipeSO> GetWaitingRecipeSOList() {
+        return waitingRecipeSOList;
     }
 
     public bool IsRecipeMatching(PlateKitchenObject plateKitchenObject, RecipeSO waitingRecipeSO) {
