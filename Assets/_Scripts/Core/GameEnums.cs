@@ -5,8 +5,16 @@
     Leaving
 }
 
+
 public enum CurrencyType
 {
     Coin,
     Gem
+}
+
+
+public enum ShopItemCategory
+{
+    Dish,
+    Tool
 }
