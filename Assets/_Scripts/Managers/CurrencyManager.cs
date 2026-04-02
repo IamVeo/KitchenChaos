@@ -10,8 +10,6 @@ public class CurrencyManager : MonoBehaviour
     private Dictionary<CurrencyType, int> balances = new();
     
     private const string CURRENCY_KEY_PREFIX = "Currency_";
-
-    public event Action<(CurrencyType type, int amount, bool successful)> OnCurrencyUpdated;
     
     private void Awake()
     {
@@ -43,12 +41,6 @@ public class CurrencyManager : MonoBehaviour
         PlayerPrefs.SetInt($"{CURRENCY_KEY_PREFIX}{type.ToString()}", balances[type]);
         PlayerPrefs.Save();
     }
-
-    private void UpdateCurrencyData(CurrencyType type)
-    {
-        OnCurrencyUpdated?.Invoke((type, balances[type], true));
-        SaveCurrencyData(type);
-    }
     
     // ================ PUBLIC METHODS ================
     
@@ -66,7 +58,7 @@ public class CurrencyManager : MonoBehaviour
         }
 
         balances[type] = GetBalance(type) + amount;
-        UpdateCurrencyData(type);
+        SaveCurrencyData(type);
     }
 
     public bool TrySpendCurrency(CurrencyType type, int amount)
@@ -81,13 +73,12 @@ public class CurrencyManager : MonoBehaviour
         if (currentBalance >= amount)
         {
             balances[type] = currentBalance - amount;
-            UpdateCurrencyData(type);
+            SaveCurrencyData(type);
             
             return true;
         }
         
         Debug.LogWarning($"Insufficient {type} currency. Current balance: {currentBalance}, attempted to spend: {amount}");
-        OnCurrencyUpdated?.Invoke((type, currentBalance, false));
         return false;
     }
 }

@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ShopItemSO : MonoBehaviour
+[CreateAssetMenu(fileName = "ShopItemSO", menuName = "ScriptableObjects/ShopItemSO")]
+public class ShopItemSO : ScriptableObject
 {
     public string id;
     public string itemName;

@@ -1,18 +1,32 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class ShopUI : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField] private TextMeshProUGUI currencyText;
+    
+    private void Start()
     {
-        
+        ShopManager.Instance.OnCurrencyChanged += ShopManager_OnCurrencyChanged;
+        ShopManager.Instance.OnItemPurchased += ShopManager_OnItemPurchased;
     }
-
-    // Update is called once per frame
-    void Update()
+    
+    private void ShopManager_OnCurrencyChanged(int newCurrency)
     {
-        
+        currencyText.text = $"Coins: {newCurrency}";
+    }
+    
+    private void ShopManager_OnItemPurchased((ShopItemSO item, bool successful) purchase)
+    {
+        if (purchase.successful)
+        {
+            Debug.Log($"Purchased {purchase.item.itemName} for {purchase.item.price} coins.");
+        }
+        else
+        {
+            Debug.Log($"Failed to purchase {purchase.item.itemName}. Not enough coins.");
+        }
     }
 }
