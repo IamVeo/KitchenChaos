@@ -4,3 +4,9 @@
     AttackingPlayer,
     Leaving
 }
+
+public enum CurrencyType
+{
+    Coin,
+    Gem
+}
