@@ -3,28 +3,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CurrencyManager : MonoBehaviour
+public class CurrencyManager
 {
-    public static CurrencyManager Instance { get; private set; }
+    private static CurrencyManager instance;
+
+    public static CurrencyManager Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                instance = new CurrencyManager();
+            }
+
+            return instance;
+        }
+    }
 
     private Dictionary<CurrencyType, int> balances = new();
     
     private const string CURRENCY_KEY_PREFIX = "Currency_";
-    
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-            LoadCurrencyData();
-        }
-        else
-        {
-            Debug.LogWarning("Multiple instances of CurrencyManager detected. Destroying duplicate.");
-            Destroy(gameObject);
-        }
-    }
 
     // ================ PRIVATE METHODS ================
     

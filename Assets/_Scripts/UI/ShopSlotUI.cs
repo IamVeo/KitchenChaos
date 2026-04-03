@@ -22,7 +22,7 @@ public class ShopSlotUI : MonoBehaviour
         
         purchaseButton.onClick.RemoveAllListeners();
         purchaseButton.onClick.AddListener(OnPurchaseButtonClicked);
-    }
+    }   
     
     private void OnPurchaseButtonClicked()
     {

@@ -6,6 +6,8 @@ using UnityEngine;
 public class ShopUI : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI currencyText;
+    [SerializeField] private Transform baseShopSlotUIPrefab;
+    [SerializeField] private Transform shopSlotScrollView;
     
     private void Start()
     {
