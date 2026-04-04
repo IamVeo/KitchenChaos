@@ -14,11 +14,14 @@ public class CurrencyManager
             if (instance == null)
             {
                 instance = new CurrencyManager();
+                instance.LoadCurrencyData();
             }
 
             return instance;
         }
     }
+    
+    public event Action<CurrencyType, int> OnCurrencyBalanceChanged;
 
     private Dictionary<CurrencyType, int> balances = new();
     
@@ -54,9 +57,12 @@ public class CurrencyManager
             Debug.LogWarning($"Added amount for {type} currency must be positive. Given: {amount}");
             return;
         }
-
+        
         balances[type] = GetBalance(type) + amount;
+        OnCurrencyBalanceChanged?.Invoke(type, balances[type]);
         SaveCurrencyData(type);
+        
+        Debug.Log($"Adding {amount} to {type} currency. Current balance: {GetBalance(type)}");
     }
 
     public bool TrySpendCurrency(CurrencyType type, int amount)
@@ -71,8 +77,10 @@ public class CurrencyManager
         if (currentBalance >= amount)
         {
             balances[type] = currentBalance - amount;
+            OnCurrencyBalanceChanged?.Invoke(type, balances[type]);
             SaveCurrencyData(type);
             
+            Debug.Log($"Spending {amount} of {type} currency. Current balance: {GetBalance(type)}");
             return true;
         }
         

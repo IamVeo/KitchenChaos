@@ -10,9 +10,9 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private ShopItemListSO shopItemListSO;
 
     private List<ShopItemCategory> categories = new();
-    private Dictionary<ShopItemCategory, List<ShopItemSO>> shopItems = new();
+    private Dictionary<ShopItemCategory, List<ShopItemSO>> shopItemDict = new();
     
-    public event Action<int> OnCurrencyChanged;
+    public event Action<int> OnCoinChanged;
     public event Action<(ShopItemSO item, bool successful)> OnItemPurchased;
 
     private void Awake()
@@ -31,18 +31,31 @@ public class ShopManager : MonoBehaviour
         
         InitCategories();
         InitShopItems();
+    }
+
+    private void Start()
+    {
+        CurrencyManager.Instance.OnCurrencyBalanceChanged += CurrencyManager_OnCurrencyBalanceChanged;
         
-        OnCurrencyChanged?.Invoke(CurrencyManager.Instance.GetBalance(CurrencyType.Coin));
+        OnCoinChanged?.Invoke(CurrencyManager.Instance.GetBalance(CurrencyType.Coin));
     }
 
     // ============== PRIVATE METHODS ==============
+    
+    private void CurrencyManager_OnCurrencyBalanceChanged(CurrencyType type, int newBalance)
+    {
+        if (type == CurrencyType.Coin)
+        {
+            OnCoinChanged?.Invoke(newBalance);
+        }
+    }
     
     private void InitCategories()
     {
         foreach (ShopItemCategory category in Enum.GetValues(typeof(ShopItemCategory)))
         {
             categories.Add(category);
-            shopItems[category] = new List<ShopItemSO>();
+            shopItemDict[category] = new List<ShopItemSO>();
         }
     }
 
@@ -50,7 +63,7 @@ public class ShopManager : MonoBehaviour
     {
         foreach (ShopItemSO item in shopItemListSO.shopItemSOList)
         {
-            shopItems[item.category].Add(item);
+            shopItemDict[item.category].Add(item);
         }
     }
     
@@ -63,10 +76,15 @@ public class ShopManager : MonoBehaviour
     
     public List<ShopItemSO> GetShopItemsByCategory(ShopItemCategory category)
     {
-        return shopItems[category];
+        return shopItemDict[category];
     }
     
-    private ShopItemSO GetShopItemById(string id)
+    public Dictionary<ShopItemCategory, List<ShopItemSO>> GetAllShopItems()
+    {
+        return shopItemDict;
+    }
+    
+    public ShopItemSO GetShopItemById(string id)
     {
         foreach (ShopItemSO item in shopItemListSO.shopItemSOList)
         {
@@ -90,12 +108,13 @@ public class ShopManager : MonoBehaviour
 
         if (CurrencyManager.Instance.TrySpendCurrency(CurrencyType.Coin, item.price))
         {
-            OnCurrencyChanged?.Invoke(CurrencyManager.Instance.GetBalance(CurrencyType.Coin));
+            Debug.Log("Purchase successful: " + item.itemName);
+            OnCoinChanged?.Invoke(CurrencyManager.Instance.GetBalance(CurrencyType.Coin));
             OnItemPurchased?.Invoke((item, true));
         }
         else
         {
-            Debug.Log("ShopManager: Not enough coins to purchase this item.");
+            Debug.Log("ShopManager: Not enough coins to purchase this item: " + item.itemName);
             OnItemPurchased?.Invoke((item, false));
         }
     }
