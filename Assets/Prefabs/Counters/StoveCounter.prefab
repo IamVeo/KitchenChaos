@@ -390,6 +390,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 9092307958401991096}
     m_Modifications:
+    - target: {fileID: 2650681994217185101, guid: ec7deaa2011ed004092f65a9c949ac82,
+        type: 3}
+      propertyPath: hasProgressGameObject
+      value: 
+      objectReference: {fileID: 9092307958401991098}
     - target: {fileID: 4586820948984221236, guid: ec7deaa2011ed004092f65a9c949ac82,
         type: 3}
       propertyPath: hasProgressGameObject
@@ -748,7 +753,7 @@ PrefabInstance:
     - target: {fileID: 6469687145593214519, guid: ac964a67cdc32584aab07a6cd2fe1b21,
         type: 3}
       propertyPath: m_RootOrder
-      value: -1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6469687145593214519, guid: ac964a67cdc32584aab07a6cd2fe1b21,
         type: 3}

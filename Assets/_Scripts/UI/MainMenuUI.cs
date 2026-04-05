@@ -6,14 +6,41 @@ using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour {
 
-
+    [Header("UI Elements")]
     [SerializeField] private Button playButton;
+    [SerializeField] private Button loginButton;
+    [SerializeField] private Button logoutButton;
+    [SerializeField] private Button shopButton;
     [SerializeField] private Button quitButton;
+
+    private void Start() {
+        UpdateLoginStatus();
+    }
+
+    private void UpdateLoginStatus() {
+        if (string.IsNullOrEmpty(AuthManager.JwtToken)) {
+            loginButton.gameObject.SetActive(true);
+            logoutButton.gameObject.SetActive(false);
+        } else {
+            loginButton.gameObject.SetActive(false);
+            logoutButton.gameObject.SetActive(true);
+        }
+    }
 
 
     private void Awake() {
         playButton.onClick.AddListener(() => {
-            Loader.Load(Loader.Scene.GameScene);
+            SceneManager.LoadSceneAsync("GameScene");
+        });
+        loginButton.onClick.AddListener(() => {
+            SceneManager.LoadSceneAsync("LoginScene");
+        });
+        logoutButton.onClick.AddListener(() => {
+            AuthManager.Logout();
+            UpdateLoginStatus();
+        });
+        shopButton.onClick.AddListener(() => {
+            SceneManager.LoadSceneAsync("ShopTestScene");
         });
         quitButton.onClick.AddListener(() => {
             Application.Quit();
@@ -21,5 +48,4 @@ public class MainMenuUI : MonoBehaviour {
 
         Time.timeScale = 1f;
     }
-
 }
