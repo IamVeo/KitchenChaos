@@ -12,19 +12,19 @@ public class AuthManager : MonoBehaviour {
     public static string JwtToken { get; private set; }
 
     [Header("UI Panels")]
-    public GameObject loginPanel;
-    public GameObject registerPanel;
+    [SerializeField] private GameObject loginPanel;
+    [SerializeField] private GameObject registerPanel;
 
     [Header("Login UI References")]
-    public TMP_InputField loginUsernameInput;
-    public TMP_InputField loginPasswordInput;
-    public TextMeshProUGUI loginFeedbackText;
+    [SerializeField] private TMP_InputField loginUsernameInput;
+    [SerializeField] private TMP_InputField loginPasswordInput;
+    [SerializeField] private TextMeshProUGUI loginFeedbackText;
 
     [Header("Register UI References")]
-    public TMP_InputField registerUsernameInput;
-    public TMP_InputField registerPasswordInput;
-    public TMP_InputField registerConfirmPasswordInput;
-    public TextMeshProUGUI registerFeedbackText;
+    [SerializeField] private TMP_InputField registerUsernameInput;
+    [SerializeField] private TMP_InputField registerPasswordInput;
+    [SerializeField] private TMP_InputField registerConfirmPasswordInput;
+    [SerializeField] private TextMeshProUGUI registerFeedbackText;
 
     private void Start() {
         ShowLoginPanel();
@@ -75,9 +75,8 @@ public class AuthManager : MonoBehaviour {
         StartCoroutine(SendAuthRequest(username, password, "/register", false, registerFeedbackText));
     }
 
-    public void Logout() {
+    public static void Logout() {
         JwtToken = null;
-        UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
     }
 
     private IEnumerator SendAuthRequest(string username, string password, string endpoint, bool isLogin, TextMeshProUGUI targetFeedbackText) {
