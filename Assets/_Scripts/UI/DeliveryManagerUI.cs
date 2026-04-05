@@ -29,18 +29,17 @@ public class DeliveryManagerUI : MonoBehaviour {
     }
 
     private void UpdateVisual() {
-        // Xóa sạch các thẻ order cũ trên màn hình
         foreach (Transform child in container) {
             if (child == recipeTemplate) continue;
             Destroy(child.gameObject);
         }
 
-        // Sinh ra thẻ mới cho mỗi order đang chờ
-        foreach (RecipeSO recipeSO in DeliveryManager.Instance.GetWaitingRecipeSOList()) {
+        foreach (DeliveryManager.RecipeOrder order in DeliveryManager.Instance.GetWaitingOrderList()) {
             Transform recipeTransform = Instantiate(recipeTemplate, container);
             recipeTransform.gameObject.SetActive(true);
 
-            recipeTransform.GetComponent<DeliveryManagerSingleUI>().SetRecipeSO(recipeSO);
+            // Gửi toàn bộ Order sang cho thẻ SingleUI
+            recipeTransform.GetComponent<DeliveryManagerSingleUI>().SetRecipeOrder(order);
         }
     }
 }

@@ -9,6 +9,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     private EnemyState currentEnemyState;
     private NavMeshAgent navMeshAgent;
+    private NavMeshObstacle navMeshObstacle;
     private TableCounter targetTable;
     private Transform targetTableSeat;
     private EnemyDataSO enemyData;
@@ -77,6 +78,17 @@ public class Enemy : MonoBehaviour, IHasProgress {
             navMeshAgent.isStopped = true;
             navMeshAgent.enabled = false;
 
+            transform.position = targetTableSeat.position;
+            transform.rotation = targetTableSeat.rotation;
+
+            if (navMeshObstacle == null) {
+                navMeshObstacle = gameObject.AddComponent<NavMeshObstacle>();
+                navMeshObstacle.shape = NavMeshObstacleShape.Box;
+                navMeshObstacle.carving = true;
+            } else {
+                navMeshObstacle.enabled = true;
+            }
+
             if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
                 rb.constraints = RigidbodyConstraints.FreezeAll;
             }
@@ -85,7 +97,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
             patienceTimer = enemyData.patienceMax;
 
             waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
-            DeliveryManager.Instance.AddWaitingRecipe(waitingRecipeSO);
+            DeliveryManager.Instance.AddWaitingRecipe(this, waitingRecipeSO);
 
             targetTable.SeatEnemy(this, waitingRecipeSO);
         }
@@ -137,6 +149,11 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     public void Leave() {
         currentEnemyState = EnemyState.Leaving;
+
+        if (navMeshObstacle != null) {
+            navMeshObstacle.enabled = false;
+        }
+
         navMeshAgent.enabled = true;
 
         if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
@@ -147,7 +164,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
             progressNormalized = 0f
         });
 
-        DeliveryManager.Instance.RemoveWaitingRecipe(waitingRecipeSO);
+        DeliveryManager.Instance.RemoveWaitingRecipe(this);
         targetTable.ClearTable();
         EnemySpawnManager.Instance.FreeTable(targetTable);
         Destroy(gameObject);
@@ -155,6 +172,9 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     public void Enrage() {
         currentEnemyState = EnemyState.AttackingPlayer;
+        if (navMeshObstacle != null) {
+            navMeshObstacle.enabled = false;
+        }
         navMeshAgent.enabled = true;
         navMeshAgent.stoppingDistance = 0.8f; // Trả lại phanh 0.8 mét
 
@@ -168,7 +188,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
         });
 
 
-        DeliveryManager.Instance.RemoveWaitingRecipe(waitingRecipeSO);
+        DeliveryManager.Instance.RemoveWaitingRecipe(this);
         targetTable.ClearTable();
         EnemySpawnManager.Instance.FreeTable(targetTable);
     }
@@ -178,7 +198,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
         
         if(DeliveryManager.Instance.IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
             DeliveryManager.Instance.AddSuccessfulDelivery();
-            DeliveryManager.Instance.RemoveWaitingRecipe(waitingRecipeSO); // XÓA ORDER
+            DeliveryManager.Instance.RemoveWaitingRecipe(this); // XÓA ORDER
             targetTable.ClearTable();
 
             Leave();
