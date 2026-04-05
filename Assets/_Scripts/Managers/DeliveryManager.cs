@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEngine.EventSystems.EventTrigger;
 
 public class DeliveryManager : MonoBehaviour {
 
@@ -10,7 +11,12 @@ public class DeliveryManager : MonoBehaviour {
     public event EventHandler OnRecipeSpawned;
     public event EventHandler OnRecipeCompleted;
 
-    private List<RecipeSO> waitingRecipeSOList = new List<RecipeSO>();
+    public class RecipeOrder {
+        public Enemy enemy;
+        public RecipeSO recipeSO;
+    }
+
+    private List<RecipeOrder> waitingOrderList = new List<RecipeOrder>();
 
     public static DeliveryManager Instance { get; private set; }
 
@@ -30,18 +36,23 @@ public class DeliveryManager : MonoBehaviour {
         OnRecipeFailed?.Invoke(this, EventArgs.Empty);
     }
 
-    public void AddWaitingRecipe(RecipeSO recipe) {
-        waitingRecipeSOList.Add(recipe);
+    public void AddWaitingRecipe(Enemy enemy, RecipeSO recipe) {
+        waitingOrderList.Add(new RecipeOrder { enemy = enemy, recipeSO = recipe });
         OnRecipeSpawned?.Invoke(this, EventArgs.Empty);
     }
 
-    public void RemoveWaitingRecipe(RecipeSO recipe) {
-        waitingRecipeSOList.Remove(recipe);
-        OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
+    public void RemoveWaitingRecipe(Enemy enemy) {
+        for (int i = 0; i < waitingOrderList.Count; i++) {
+            if (waitingOrderList[i].enemy == enemy) {
+                waitingOrderList.RemoveAt(i);
+                OnRecipeCompleted?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+        }
     }
 
-    public List<RecipeSO> GetWaitingRecipeSOList() {
-        return waitingRecipeSOList;
+    public List<RecipeOrder> GetWaitingOrderList() {
+        return waitingOrderList;
     }
 
     public bool IsRecipeMatching(PlateKitchenObject plateKitchenObject, RecipeSO waitingRecipeSO) {

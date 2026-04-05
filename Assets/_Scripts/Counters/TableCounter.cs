@@ -5,6 +5,7 @@ public class TableCounter : BaseCounter {
     public event EventHandler<OnOrderPlacedEventArgs> OnOrderPlaced;
     public class OnOrderPlacedEventArgs : EventArgs {
         public RecipeSO recipeSO;
+        public Enemy enemy;
     }
     public event EventHandler OnOrderCompleted;
 
@@ -27,6 +28,7 @@ public class TableCounter : BaseCounter {
 
         OnOrderPlaced?.Invoke(this, new OnOrderPlacedEventArgs {
             recipeSO = waitingRecipeSO,
+            enemy = currentEnemy
         });
     }
 
