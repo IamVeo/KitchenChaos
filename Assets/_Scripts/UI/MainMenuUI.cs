@@ -12,21 +12,7 @@ public class MainMenuUI : MonoBehaviour {
     [SerializeField] private Button logoutButton;
     [SerializeField] private Button shopButton;
     [SerializeField] private Button quitButton;
-
-    private void Start() {
-        UpdateLoginStatus();
-    }
-
-    private void UpdateLoginStatus() {
-        if (string.IsNullOrEmpty(AuthManager.JwtToken)) {
-            loginButton.gameObject.SetActive(true);
-            logoutButton.gameObject.SetActive(false);
-        } else {
-            loginButton.gameObject.SetActive(false);
-            logoutButton.gameObject.SetActive(true);
-        }
-    }
-
+    [SerializeField] private GameObject shopUIGameObject;
 
     private void Awake() {
         playButton.onClick.AddListener(() => {
@@ -40,12 +26,27 @@ public class MainMenuUI : MonoBehaviour {
             UpdateLoginStatus();
         });
         shopButton.onClick.AddListener(() => {
-            SceneManager.LoadSceneAsync("ShopTestScene");
+            shopUIGameObject.SetActive(true);
         });
         quitButton.onClick.AddListener(() => {
             Application.Quit();
         });
 
         Time.timeScale = 1f;
+        shopUIGameObject.SetActive(false);
+    }
+    
+    private void Start() {
+        UpdateLoginStatus();
+    }
+
+    private void UpdateLoginStatus() {
+        if (string.IsNullOrEmpty(AuthManager.JwtToken)) {
+            loginButton.gameObject.SetActive(true);
+            logoutButton.gameObject.SetActive(false);
+        } else {
+            loginButton.gameObject.SetActive(false);
+            logoutButton.gameObject.SetActive(true);
+        }
     }
 }

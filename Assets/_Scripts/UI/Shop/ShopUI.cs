@@ -9,6 +9,11 @@ public class ShopUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI currencyText;
     [SerializeField] private CategoryVerticalTabsUI categoryVerticalTabsUI;
     [SerializeField] private ShopSlotScrollViewUI shopSlotScrollViewUI;
+
+    private void OnEnable()
+    {
+        currencyText.text = $"Coins: {CurrencyManager.Instance.GetBalance(CurrencyType.Coin)}";
+    }
     
     private void Start()
     {
@@ -46,6 +51,11 @@ public class ShopUI : MonoBehaviour
     {
         categoryVerticalTabsUI.SetSelectedCategory(categoryButtonUI.GetButtonCategory());
         shopSlotScrollViewUI.SetScrollViewContent(categoryButtonUI.GetCategoryScrollViewContent());
+    }
+
+    public void OnBackButtonClicked()
+    {
+        gameObject.SetActive(false);
     }
     
     // cheat coin temp method
