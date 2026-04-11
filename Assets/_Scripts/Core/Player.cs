@@ -42,7 +42,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
     private float knockbackTimer;
     private float knockbackDuration = 0.4f;
-    private float knockbackSpeed = 5f;
+    private float knockbackSpeed = 10f;
 
     private Rigidbody rb;
 
@@ -116,22 +116,16 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
         // 2. Xử lý logic tương tác (Raycast không ảnh hưởng đến di chuyển vật lý)
         HandleInteractions();
-
-        // 3. Xử lý Input và Xoay nhân vật (Nên làm ở Update để mượt mà)
-        Vector3 moveDir = GetMovementDirection();
-        isWalking = moveDir != Vector3.zero;
-
-        if (moveDir != Vector3.zero) {
-            float rotateSpeed = 10f;
-            transform.forward = Vector3.Slerp(transform.forward, moveDir, Time.deltaTime * rotateSpeed);
-        }
     }
 
-    private void FixedUpdate() {
-        // Chỉ chạy vật lý di chuyển khi không bị choáng và không đánh nhau
-        if (knockbackTimer > 0 || isAttacking) return;
+    private void FixedUpdate()
+    {
 
-        HandleMovement();
+        HandleRotation();
+        
+        // Chỉ chạy vật lý di chuyển khi không bị choáng và không đánh nhau
+        if (knockbackTimer <= 0 && !isAttacking)
+            HandleMovement();
     }
 
     public bool IsWalking() => isWalking;
@@ -175,7 +169,21 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private void HandleMovement() {
         Vector3 moveDir = GetMovementDirection();
 
-        rb.velocity = moveDir * MoveSpeed;
+        Vector3 targetVelocity = moveDir * MoveSpeed;
+        rb.velocity = new Vector3(targetVelocity.x, rb.velocity.y, targetVelocity.z);
+    }
+
+    private void HandleRotation()
+    {
+        Vector3 moveDir = GetMovementDirection();
+        isWalking = moveDir != Vector3.zero;
+
+        if (moveDir != Vector3.zero) {
+            float rotateSpeed = 10f;
+            Quaternion targetRotation = Quaternion.LookRotation(moveDir, Vector3.up);
+            Quaternion smoothedRotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * rotateSpeed);
+            rb.MoveRotation(smoothedRotation);
+        }
     }
 
     public void ReceiveKnockback(Vector3 knockbackDir) {
