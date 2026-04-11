@@ -42,7 +42,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
     private float knockbackTimer;
     private float knockbackDuration = 0.4f;
-    private float knockbackSpeed = 10f;
+    private float knockbackForce = 10f;
 
     private Rigidbody rb;
 
@@ -195,7 +195,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
             rb.velocity = Vector3.zero;
 
             // Bắn ra một lực Impulse
-            rb.AddForce(knockbackDir * knockbackSpeed, ForceMode.Impulse);
+            rb.AddForce(knockbackDir * knockbackForce, ForceMode.Impulse);
         }
     }
         

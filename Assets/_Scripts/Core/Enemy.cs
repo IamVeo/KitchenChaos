@@ -13,17 +13,22 @@ public class Enemy : MonoBehaviour, IHasProgress {
     private TableCounter targetTable;
     private Transform targetTableSeat;
     private EnemyDataSO enemyData;
-
+    private Rigidbody rb;
+    
     private float patienceTimer;
     private float attackCooldownTimer;
     private HealthManager healthManager;
 
     [SerializeField] private RecipeListSO recipeListSO;
     private RecipeSO waitingRecipeSO;
+    
+    private float knockbackDuration = 0.4f;
+    private float knockbackForce = 10f;
 
     private void Awake() {
         navMeshAgent = GetComponent<NavMeshAgent>();
         healthManager = GetComponent<HealthManager>();
+        rb = GetComponent<Rigidbody>();
     }
 
     public bool IsAttackingPlayer() => currentEnemyState == EnemyState.AttackingPlayer;
@@ -155,10 +160,9 @@ public class Enemy : MonoBehaviour, IHasProgress {
         }
 
         navMeshAgent.enabled = true;
+        
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
 
-        if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
-            rb.constraints = RigidbodyConstraints.FreezeRotation;
-        }
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = 0f
@@ -178,10 +182,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
         navMeshAgent.enabled = true;
         navMeshAgent.stoppingDistance = 0.8f; // Trả lại phanh 0.8 mét
 
-        // THÊM ĐOẠN NÀY: Mở khóa vị trí, chỉ giữ lại khóa góc xoay (như cũ)
-        if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
-            rb.constraints = RigidbodyConstraints.FreezeRotation;
-        }
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = 0f
@@ -221,20 +222,15 @@ public class Enemy : MonoBehaviour, IHasProgress {
     }
 
     private IEnumerator KnockbackRoutine(Vector3 knockbackDir) {
+        
         navMeshAgent.enabled = false;
+        rb.isKinematic = false;
+        rb.velocity = Vector3.zero;
+        rb.AddForce(knockbackDir * knockbackForce, ForceMode.Impulse);
 
-        if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
-            rb.isKinematic = false;
-            rb.velocity = Vector3.zero;
-
-            rb.AddForce(knockbackDir * 10f, ForceMode.Impulse);
-        }
-
-        yield return new WaitForSeconds(0.2f);
-
-        if (TryGetComponent<Rigidbody>(out Rigidbody rb2)) {
-            rb2.isKinematic = true; 
-        }
+        yield return new WaitForSeconds(knockbackDuration);
+        
+        rb.isKinematic = true; 
 
         if (this != null) {
             navMeshAgent.enabled = true;
