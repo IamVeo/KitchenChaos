@@ -45,6 +45,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private float knockbackForce = 10f;
 
     private Rigidbody rb;
+    private HealthManager healthManager;
 
     private void Awake() {
         if (Instance != null) {
@@ -53,16 +54,15 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         Instance = this;
 
         rb = GetComponent<Rigidbody>();
+        healthManager = GetComponent<HealthManager>();
     }
 
     private void Start() {
         gameInput.OnInteractAction += GameInput_OnInteractAction;
         gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
         gameInput.OnAttackAction += GameInput_OnAttackAction;
-
-        if (TryGetComponent<HealthManager>(out HealthManager healthManager)){
-            healthManager.OnDied += HealthManager_OnDied;
-        }
+        
+        healthManager.OnDied += HealthManager_OnDied;
     }
 
     private void HealthManager_OnDied(object sender, EventArgs e) {
@@ -128,9 +128,6 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
             HandleMovement();
     }
 
-    public bool IsWalking() => isWalking;
-    public bool IsAttacking() => isAttacking;
-
     private Vector3 GetMovementDirection() {
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
 
@@ -185,44 +182,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
             rb.MoveRotation(smoothedRotation);
         }
     }
-
-    public void ReceiveKnockback(Vector3 knockbackDir) {
-        // Chỉ nhận lực mới nếu lực cũ đã hết (tránh cộng dồn)
-        if (knockbackTimer <= 0) {
-            knockbackTimer = knockbackDuration;
-
-            // Xóa đà di chuyển cũ (nếu có) để lực đẩy được chính xác
-            rb.velocity = Vector3.zero;
-
-            // Bắn ra một lực Impulse
-            rb.AddForce(knockbackDir * knockbackForce, ForceMode.Impulse);
-        }
-    }
-        
-    private void SetSelectedCounter(BaseCounter selectedCounter) {
-        this.selectedCounter = selectedCounter;
-
-        OnSelectedCounterChanged?.Invoke(this, new OnSelectedCounterChangedEventArgs {
-            selectedCounter = selectedCounter
-        });
-    }
-
-    public Transform GetKitchenObjectFollowTransform() => kitchenObjectHoldPoint;
-
-    public void SetKitchenObject(KitchenObject kitchenObject) {
-        this.kitchenObject = kitchenObject;
-
-        if (kitchenObject != null) {
-            OnPickedSomething?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    public KitchenObject GetKitchenObject() => kitchenObject;
-
-    public void ClearKitchenObject() => kitchenObject = null;
-
-    public bool HasKitchenObject() => kitchenObject != null;
-
+    
     private void Attack() {
         OnAttacking?.Invoke(this, EventArgs.Empty);
 
@@ -254,4 +214,46 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(hitCenter, HitRadius);
     }
+    
+    private void SetSelectedCounter(BaseCounter selectedCounter) {
+        this.selectedCounter = selectedCounter;
+
+        OnSelectedCounterChanged?.Invoke(this, new OnSelectedCounterChangedEventArgs {
+            selectedCounter = selectedCounter
+        });
+    }
+    
+    
+    public bool IsWalking() => isWalking;
+    public bool IsAttacking() => isAttacking;
+    public HealthManager GetHealthManager() => healthManager;
+
+    public void ReceiveKnockback(Vector3 knockbackDir) {
+        // Chỉ nhận lực mới nếu lực cũ đã hết (tránh cộng dồn)
+        if (knockbackTimer <= 0) {
+            knockbackTimer = knockbackDuration;
+
+            // Xóa đà di chuyển cũ (nếu có) để lực đẩy được chính xác
+            rb.velocity = Vector3.zero;
+
+            // Bắn ra một lực Impulse
+            rb.AddForce(knockbackDir * knockbackForce, ForceMode.Impulse);
+        }
+    }
+
+    public Transform GetKitchenObjectFollowTransform() => kitchenObjectHoldPoint;
+
+    public void SetKitchenObject(KitchenObject kitchenObject) {
+        this.kitchenObject = kitchenObject;
+
+        if (kitchenObject != null) {
+            OnPickedSomething?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public KitchenObject GetKitchenObject() => kitchenObject;
+
+    public void ClearKitchenObject() => kitchenObject = null;
+
+    public bool HasKitchenObject() => kitchenObject != null;
 }

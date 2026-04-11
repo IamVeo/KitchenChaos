@@ -24,6 +24,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
     
     private float knockbackDuration = 0.4f;
     private float knockbackForce = 10f;
+    private float knockbackDrag = 3.5f;
 
     private void Awake() {
         navMeshAgent = GetComponent<NavMeshAgent>();
@@ -146,10 +147,8 @@ public class Enemy : MonoBehaviour, IHasProgress {
     }
 
     private void AttackPlayer() {
-        if (Player.Instance.TryGetComponent<IDamageable>(out IDamageable playerDamageable)) {
-            Vector3 damageDirection = Player.Instance.transform.position - transform.position;
-            playerDamageable.TakeDamage(enemyData.attackDamage, damageDirection);
-        }
+        Vector3 damageDirection = Player.Instance.transform.position - transform.position;
+        Player.Instance.GetHealthManager().TakeDamage(enemyData.attackDamage, damageDirection);
     }
 
     public void Leave() {
@@ -226,11 +225,13 @@ public class Enemy : MonoBehaviour, IHasProgress {
         navMeshAgent.enabled = false;
         rb.isKinematic = false;
         rb.velocity = Vector3.zero;
+        rb.drag = knockbackDrag;
         rb.AddForce(knockbackDir * knockbackForce, ForceMode.Impulse);
 
         yield return new WaitForSeconds(knockbackDuration);
         
         rb.isKinematic = true; 
+        rb.drag = 0f;
 
         if (this != null) {
             navMeshAgent.enabled = true;
