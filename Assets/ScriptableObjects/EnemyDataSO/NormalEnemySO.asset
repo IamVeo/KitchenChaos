@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Normal Enemy
   prefab: {fileID: 2747464066111718572, guid: 92ea674d1c6295d478f4bd6ebe555094, type: 3}
-  moveSpeed: 5
-  patienceMax: 20
+  moveSpeed: 10
+  patienceMax: 30
   maxHealth: 100
   attackDamage: 10
   attackRange: 1.5

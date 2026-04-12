@@ -37,6 +37,8 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private bool isWalking;
     private bool isAttacking;
     private Vector3 lastInteractDir;
+    private Vector3 currentCollisionNormal;
+    private bool isTouchingCollider;
     private BaseCounter selectedCounter;
     private KitchenObject kitchenObject;
 
@@ -166,6 +168,14 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private void HandleMovement() {
         Vector3 moveDir = GetMovementDirection();
 
+        if (isTouchingCollider && moveDir != Vector3.zero)
+        {
+            float intoCollider = Vector3.Dot(moveDir, currentCollisionNormal);
+
+            if (intoCollider < 0f)
+                moveDir = (moveDir - currentCollisionNormal * intoCollider).normalized;
+        }        
+        
         Vector3 targetVelocity = moveDir * MoveSpeed;
         rb.velocity = new Vector3(targetVelocity.x, rb.velocity.y, targetVelocity.z);
     }
@@ -222,6 +232,41 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
             selectedCounter = selectedCounter
         });
     }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        Vector3 bestNormal = Vector3.zero;
+        float bestScore = -1f;
+        bool foundCollider = false;
+        
+        foreach (ContactPoint contact in collision.contacts)
+        {
+            if (Mathf.Abs(contact.normal.y) < 0.2f)
+            {
+                float score = Mathf.Abs(Vector3.Dot(contact.normal, GetMovementDirection()));
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestNormal = contact.normal;
+                    foundCollider = true;
+                }
+            }
+        }
+
+        if (foundCollider)
+        {
+            currentCollisionNormal = bestNormal;
+            isTouchingCollider = true;
+        }
+    }
+
+    private void OnCollisionExit(Collision _)
+    {
+        isTouchingCollider = false;
+        currentCollisionNormal = Vector3.zero;
+    }
+    
+    
     
     
     public bool IsWalking() => isWalking;
