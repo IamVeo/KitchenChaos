@@ -29,7 +29,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     public int AttackDamage => playerDataSO.attackDamage;
     public float AttackRange => playerDataSO.attackRange;
     public float HitRadius => playerDataSO.hitRadius;
-    public float AttackDelay => playerDataSO.attackDelay;
+    public float AttackCooldown => playerDataSO.attackCooldown;
 
     // ----------- interactions
     public float InteractDistance => playerDataSO.interactDistance;
@@ -76,7 +76,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
         if (isAttacking) return;
         
         isAttacking = true;
-        Invoke(nameof(ResetAttacking), AttackDelay);
+        Invoke(nameof(ResetAttacking), AttackCooldown);
         Attack();
     }
 
