@@ -50,7 +50,7 @@ NavMeshAgent:
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
-  m_AngularSpeed: 120
+  m_AngularSpeed: 240
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
@@ -71,6 +71,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba078ea25adb30744bff218728ac101b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  characterDataSO: {fileID: 11400000, guid: c5d49c02e9d2d3249bdfb3a5e0f988f9, type: 2}
+  characterVisual: {fileID: 4437445865214159983}
   recipeListSO: {fileID: 11400000, guid: a893d166c0c71024883f98211bdcabba, type: 2}
 --- !u!136 &420964694087957094
 CapsuleCollider:
@@ -207,8 +209,31 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3294758251327466535, guid: 08e8ea7376e3af04d807525a443b286c,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4437445865214159983}
   m_SourcePrefab: {fileID: 100100000, guid: 08e8ea7376e3af04d807525a443b286c, type: 3}
+--- !u!1 &2332775607158828957 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3294758251327466535, guid: 08e8ea7376e3af04d807525a443b286c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1001762992318890938}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4437445865214159983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2332775607158828957}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30e80ea01d671b246876fdb44b5ec5b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  character: {fileID: 5138769427214188010}
 --- !u!4 &2332775607158828958 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3294758251327466532, guid: 08e8ea7376e3af04d807525a443b286c,

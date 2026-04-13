@@ -1,38 +1,30 @@
 using System;
 using UnityEngine;
 
-public class Player : MonoBehaviour, IKitchenObjectParent {
-
-
+public class Player : Character, IKitchenObjectParent {
+    
     public static Player Instance { get; private set; }
-
-    [SerializeField] private PlayerDataSO playerDataSO;
+    
     [SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
     [SerializeField] private LayerMask enemyLayerMask;
 
     public event EventHandler OnPickedSomething;
-    public event EventHandler OnAttacking;
-
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
     public class OnSelectedCounterChangedEventArgs : EventArgs {
         public BaseCounter selectedCounter;
     }
 
-    // ----------- movement
-    public float MoveSpeed => playerDataSO.moveSpeed;
-    public float PlayerHeight => playerDataSO.playerHeight;
-    public float PlayerRadius => playerDataSO.playerRadius;
+    private PlayerDataSO PlayerData => DataAs<PlayerDataSO>();
+
+    // ----------- body
+    public float PlayerHeight => PlayerData.playerHeight;
+    public float PlayerRadius => PlayerData.playerRadius;
     
-    // ----------- combat
-    public int AttackDamage => playerDataSO.attackDamage;
-    public float AttackRange => playerDataSO.attackRange;
-    public float HitRadius => playerDataSO.hitRadius;
-    public float AttackCooldown => playerDataSO.attackCooldown;
 
     // ----------- interactions
-    public float InteractDistance => playerDataSO.interactDistance;
+    public float InteractDistance => PlayerData.interactDistance;
     
     private bool isWalking;
     private bool isAttacking;
@@ -45,18 +37,15 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private float knockbackTimer;
     private float knockbackDuration = 0.4f;
     private float knockbackForce = 10f;
+    
+    protected override void Awake()
+    {
+        base.Awake();
 
-    private Rigidbody rb;
-    private HealthManager healthManager;
-
-    private void Awake() {
         if (Instance != null) {
             Debug.LogError("There is more than one Player instance");
         }
         Instance = this;
-
-        rb = GetComponent<Rigidbody>();
-        healthManager = GetComponent<HealthManager>();
     }
 
     private void Start() {
@@ -147,7 +136,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
         Vector3 interactDir = lastInteractDir == Vector3.zero ? transform.forward : lastInteractDir;
 
-        float interactDistance = 1f;
+        float interactDistance = InteractDistance;
 
         float sphereRadius = 0.3f;
 
@@ -194,7 +183,7 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     }
     
     private void Attack() {
-        OnAttacking?.Invoke(this, EventArgs.Empty);
+        RaiseAttackPerformed();
 
         Vector3 hitCenter = transform.position + lastInteractDir * AttackRange;
         Collider[] hitColliders = Physics.OverlapSphere(hitCenter, HitRadius, enemyLayerMask);
@@ -269,11 +258,11 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     
     
     
-    public bool IsWalking() => isWalking;
-    public bool IsAttacking() => isAttacking;
+    public override bool IsWalking() => isWalking;
+    public override bool IsAttacking() => isAttacking;
     public HealthManager GetHealthManager() => healthManager;
 
-    public void ReceiveKnockback(Vector3 knockbackDir) {
+    protected override void ReceiveKnockback(Vector3 knockbackDir) {
         // Chỉ nhận lực mới nếu lực cũ đã hết (tránh cộng dồn)
         if (knockbackTimer <= 0) {
             knockbackTimer = knockbackDuration;

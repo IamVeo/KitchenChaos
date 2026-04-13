@@ -6,7 +6,6 @@ public abstract class CharacterDataSO : ScriptableObject
 {
     [Header("Identity")]
     public string characterName;
-    public Transform prefab;
     
     [Header("Movement")]
     public float moveSpeed;
