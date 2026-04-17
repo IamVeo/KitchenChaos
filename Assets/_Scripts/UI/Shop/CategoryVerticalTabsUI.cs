@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,9 +9,10 @@ public class CategoryVerticalTabsUI : MonoBehaviour
     
     private CategoryButtonUI selectedCategoryButtonUI;
 
-    public void InitCategoryTabs(Dictionary<ShopItemCategory, List<ShopItemSO>> shopItemDict,
-        ShopSlotScrollViewUI shopSlotScrollViewUI)
+    public void InitCategoryTabs(Dictionary<ShopItemCategory, RectTransform> categoryContentDict)
     {
+        categoryButtonUIList.Clear();
+
         foreach (Transform child in transform) {
             if (child != categoryButtonBaseUI) {
                 Destroy(child.gameObject);
@@ -21,12 +21,17 @@ public class CategoryVerticalTabsUI : MonoBehaviour
 
         categoryButtonBaseUI.gameObject.SetActive(true);
         
-        foreach (var (category, shopItemList) in shopItemDict) {
+        foreach (var (category, contentRectTransform) in categoryContentDict) {
+            if (contentRectTransform == null)
+            {
+                continue;
+            }
+
             Transform categoryButtonTransform = Instantiate(categoryButtonBaseUI, transform);
             CategoryButtonUI categoryButtonUI = categoryButtonTransform.GetComponent<CategoryButtonUI>();
             categoryButtonUIList.Add(categoryButtonUI);
             
-            categoryButtonUI.InitCategoryButton(category, shopSlotScrollViewUI.SetUpContent(shopItemList));
+            categoryButtonUI.InitCategoryButton(category, contentRectTransform);
         }
         
         categoryButtonBaseUI.gameObject.SetActive(false);
@@ -34,6 +39,8 @@ public class CategoryVerticalTabsUI : MonoBehaviour
     
     public void SetSelectedCategory(ShopItemCategory category)
     {
+        selectedCategoryButtonUI = null;
+
         foreach (CategoryButtonUI button in categoryButtonUIList)
         {
             if (button.GetButtonCategory() == category)

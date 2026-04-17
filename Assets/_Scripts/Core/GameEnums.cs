@@ -16,5 +16,6 @@ public enum CurrencyType
 public enum ShopItemCategory
 {
     Dish,
-    Tool
+    Tool,
+    Coins
 }

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -10,9 +8,9 @@ public class CategoryButtonUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI categoryNameText;
     
     private ShopItemCategory buttonCategory;
-    private Transform categoryScrollViewContent;
+    private RectTransform categoryScrollViewContent;
     
-    public void InitCategoryButton(ShopItemCategory category, Transform scrollViewContent)
+    public void InitCategoryButton(ShopItemCategory category, RectTransform scrollViewContent)
     {
         categoryNameText.text = category.ToString();
         buttonCategory = category;
@@ -25,7 +23,11 @@ public class CategoryButtonUI : MonoBehaviour
     {
         selectedVisual.SetActive(selected);
         unselectedVisual.SetActive(!selected);
-        categoryScrollViewContent.gameObject.SetActive(selected);
+
+        if (categoryScrollViewContent != null)
+        {
+            categoryScrollViewContent.gameObject.SetActive(selected);
+        }
     }
     
     public ShopItemCategory GetButtonCategory()
@@ -35,6 +37,6 @@ public class CategoryButtonUI : MonoBehaviour
     
     public RectTransform GetCategoryScrollViewContent()
     {
-        return categoryScrollViewContent.GetComponent<RectTransform>();
+        return categoryScrollViewContent;
     }
 }

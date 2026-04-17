@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Text;
 using UnityEngine.Networking;
 using UnityEngine;
@@ -27,6 +26,11 @@ public class AuthManager : MonoBehaviour {
     [SerializeField] private TextMeshProUGUI registerFeedbackText;
 
     private void Start() {
+        // Nếu token đã có sẵn (ví dụ quay lại scene), đồng bộ cho PaymentManager.
+        if (!string.IsNullOrEmpty(JwtToken)) {
+            PaymentManager.Instance.SetUserToken(JwtToken);
+        }
+
         ShowLoginPanel();
     }
 
@@ -77,6 +81,12 @@ public class AuthManager : MonoBehaviour {
 
     public static void Logout() {
         JwtToken = null;
+
+        // Đồng bộ trạng thái logout cho PaymentManager.
+        PaymentManager existingPaymentManager = Object.FindObjectOfType<PaymentManager>();
+        if (existingPaymentManager != null) {
+            existingPaymentManager.SetUserToken(null);
+        }
     }
 
     private IEnumerator SendAuthRequest(string username, string password, string endpoint, bool isLogin, TextMeshProUGUI targetFeedbackText) {
@@ -113,7 +123,15 @@ public class AuthManager : MonoBehaviour {
             } else {
                 if (isLogin) {
                     JwtResponse jwtResponse = JsonUtility.FromJson<JwtResponse>(request.downloadHandler.text);
+
+                    if (jwtResponse == null || string.IsNullOrEmpty(jwtResponse.token)) {
+                        targetFeedbackText.text = "Login failed: invalid token response.";
+                        targetFeedbackText.color = Color.red;
+                        yield break;
+                    }
+
                     JwtToken = jwtResponse.token;
+                    PaymentManager.Instance.SetUserToken(JwtToken);
 
                     targetFeedbackText.text = $"Welcome, {jwtResponse.username}!";
                     targetFeedbackText.color = Color.green;
