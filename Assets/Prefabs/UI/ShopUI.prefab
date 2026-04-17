@@ -2343,6 +2343,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7841841238917540197}
   - component: {fileID: 7841841238917540196}
+  - component: {fileID: 1600692859119517975}
   m_Layer: 5
   m_Name: ShopUI
   m_TagString: Untagged
@@ -2369,6 +2370,7 @@ RectTransform:
   - {fileID: 266857954886186394}
   - {fileID: 266857954359613514}
   - {fileID: 8994186664585309206}
+  - {fileID: 8976282539391008524}
   m_Father: {fileID: 0}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2392,6 +2394,103 @@ MonoBehaviour:
   currencyText: {fileID: 266857954346795508}
   categoryVerticalTabsUI: {fileID: 266857954886186392}
   shopSlotScrollViewUI: {fileID: 266857954359613878}
+  topUpPackageListSo: {fileID: 11400000, guid: 8e72e854e9dee4249b183843664f585a, type: 2}
+  topUpPackageButtonPrefab: {fileID: 2896192449366889838, guid: 817d259feacb1a3448c0b8ca500cd64e,
+    type: 3}
+--- !u!114 &1600692859119517975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6985858926586216960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 776bde06d6a74766bca6d288cdd044c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  vnpayReturnPath: /api/payment/vnpay-return
+  minSyncIntervalSeconds: 1.5
+  historyLimit: 20
+  bootstrapExistingTransactions: 1
+  syncOnStart: 1
+  enableDebugLog: 1
+--- !u!1 &7632596038587594273
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8976282539391008524}
+  - component: {fileID: 3100017851522712803}
+  - component: {fileID: 2351777953466374362}
+  m_Layer: 5
+  m_Name: TopUpPackageListContainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &8976282539391008524
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7632596038587594273}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7841841238917540197}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &3100017851522712803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7632596038587594273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 0
+  m_StartCorner: 0
+  m_StartAxis: 0
+  m_CellSize: {x: 100, y: 100}
+  m_Spacing: {x: 0, y: 0}
+  m_Constraint: 0
+  m_ConstraintCount: 2
+--- !u!114 &2351777953466374362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7632596038587594273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HorizontalFit: 0
+  m_VerticalFit: 0
 --- !u!1 &7668448917708798551
 GameObject:
   m_ObjectHideFlags: 0
