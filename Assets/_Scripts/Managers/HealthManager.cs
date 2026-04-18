@@ -10,12 +10,15 @@ public class HealthManager : MonoBehaviour, IDamageable {
     public class OnHealthChangedEventArgs : EventArgs {
         public float healthNormalized;
     }
+    
+    public event Action<int, Vector3> OnDamageTaken;
 
-    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private int maxHealth;
     private int currentHealth;
 
     [SerializeField] private float invulnerabilityDuration = .3f;
     private float invulnerabilityTimer;
+    
 
     private void Awake() {
         currentHealth = maxHealth;
@@ -37,7 +40,7 @@ public class HealthManager : MonoBehaviour, IDamageable {
     }
 
     public void TakeDamage(int damageAmount, Vector3 damageDirection) {
-        if(invulnerabilityTimer > 0) return;
+        if (invulnerabilityTimer > 0) return;
 
         currentHealth -= damageAmount;
         if (currentHealth <= 0) {
@@ -47,8 +50,7 @@ public class HealthManager : MonoBehaviour, IDamageable {
         OnHealthChanged?.Invoke(this, new OnHealthChangedEventArgs {
             healthNormalized = (float)currentHealth / maxHealth 
         });
-
-        ApplyKnockback(damageDirection);
+        OnDamageTaken?.Invoke(damageAmount, damageDirection.normalized);
 
         invulnerabilityTimer = invulnerabilityDuration;
 
@@ -59,20 +61,5 @@ public class HealthManager : MonoBehaviour, IDamageable {
 
     public void Die() {
         OnDied?.Invoke(this, EventArgs.Empty);
-    }
-
-    public Vector3 GetPosition() {
-        return transform.position;
-    }
-
-    private void ApplyKnockback(Vector3 damageDirection) {
-        damageDirection.y = 0;
-
-        if (TryGetComponent<Player>(out Player player)) {
-            player.ReceiveKnockback(damageDirection.normalized);
-        }
-        else if (TryGetComponent<Enemy>(out Enemy enemy)) {
-            enemy.ReceiveKnockback(damageDirection.normalized);
-        }
     }
 }

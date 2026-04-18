@@ -1,19 +1,11 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "PlayerDataSO", menuName = "ScriptableObjects/PlayerDataSO")]
-public class PlayerDataSO : ScriptableObject
+public class PlayerDataSO : CharacterDataSO
 {
-    [Header("Movement")]
-    public float moveSpeed;
+    [Header("Body")]
     public float playerHeight;
     public float playerRadius;
- 
-    
-    [Header("Combat")]
-    public float attackDelay;
-    public int attackDamage;
-    public float attackRange;
-    public float hitRadius;
     
     [Header("Interactions")]
     public float interactDistance;

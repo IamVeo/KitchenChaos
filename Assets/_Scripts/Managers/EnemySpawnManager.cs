@@ -4,7 +4,7 @@ using UnityEngine;
 public class EnemySpawnManager : MonoBehaviour {
     public static EnemySpawnManager Instance { get; private set; }
 
-    [SerializeField] private List<EnemyDataSO> enemyDataSOList;
+    [SerializeField] private List<Transform> enemyPrefabList;
     [SerializeField] private List<Transform> spawnPointList;
     [SerializeField] private List<TableCounter> tableCounterList;
 
@@ -42,11 +42,11 @@ public class EnemySpawnManager : MonoBehaviour {
 
         availableTableList.RemoveAt(tableIndex);
 
-        EnemyDataSO randomEnemyDataSO = enemyDataSOList[Random.Range(0, enemyDataSOList.Count)];
-        Transform enemyTransform = Instantiate(randomEnemyDataSO.prefab, spawnPoint.position, spawnPoint.rotation);
+        Transform enemyPrefab = enemyPrefabList[Random.Range(0, enemyPrefabList.Count)];
+        Transform enemyTransform = Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation);
 
-        Enemy spawnedEnemy = enemyTransform.GetComponent<Enemy>();
-        spawnedEnemy.Setup(chosenTable, randomEnemyDataSO);
+        Enemy enemy = enemyTransform.GetComponent<Enemy>();
+        enemy.Setup(chosenTable);
 
         currentEnemyCount++;
     }

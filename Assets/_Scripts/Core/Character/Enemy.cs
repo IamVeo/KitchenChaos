@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(HealthManager))]
-public class Enemy : MonoBehaviour, IHasProgress {
+public class Enemy : Character, IHasProgress {
     public event EventHandler<IHasProgress.OnProgressChangedEventArgs> OnProgressChanged;
 
     private EnemyState currentEnemyState;
@@ -12,12 +12,10 @@ public class Enemy : MonoBehaviour, IHasProgress {
     private NavMeshObstacle navMeshObstacle;
     private TableCounter targetTable;
     private Transform targetTableSeat;
-    private EnemyDataSO enemyData;
-    private Rigidbody rb;
+    private EnemyDataSO EnemyData => DataAs<EnemyDataSO>();
     
     private float patienceTimer;
     private float attackCooldownTimer;
-    private HealthManager healthManager;
 
     [SerializeField] private RecipeListSO recipeListSO;
     private RecipeSO waitingRecipeSO;
@@ -26,23 +24,20 @@ public class Enemy : MonoBehaviour, IHasProgress {
     private float knockbackForce = 10f;
     private float knockbackDrag = 3.5f;
 
-    private void Awake() {
+    protected override void Awake() {
+        base.Awake();
         navMeshAgent = GetComponent<NavMeshAgent>();
-        healthManager = GetComponent<HealthManager>();
-        rb = GetComponent<Rigidbody>();
     }
 
     public bool IsAttackingPlayer() => currentEnemyState == EnemyState.AttackingPlayer;
 
-    public void Setup(TableCounter table, EnemyDataSO data) {
+    public void Setup(TableCounter table) {
         targetTable = table;
         targetTableSeat = table.GetSeatPoint();
-        enemyData = data;
 
-        navMeshAgent.speed = enemyData.moveSpeed;
+        navMeshAgent.speed = MoveSpeed;
         navMeshAgent.stoppingDistance = 0f;
-
-        healthManager.SetMaxHealth(enemyData.maxHealth);
+        
         healthManager.OnDied += HealthManager_OnDied;
 
         currentEnemyState = EnemyState.WalkingToTable;
@@ -94,13 +89,12 @@ public class Enemy : MonoBehaviour, IHasProgress {
             } else {
                 navMeshObstacle.enabled = true;
             }
+            
+            rb.constraints = RigidbodyConstraints.FreezeAll;
 
-            if (TryGetComponent<Rigidbody>(out Rigidbody rb)) {
-                rb.constraints = RigidbodyConstraints.FreezeAll;
-            }
 
             currentEnemyState = EnemyState.WaitingForFood;
-            patienceTimer = enemyData.patienceMax;
+            patienceTimer = EnemyData.patienceMax;
 
             waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
             DeliveryManager.Instance.AddWaitingRecipe(this, waitingRecipeSO);
@@ -111,7 +105,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
     private void HandleWaitingForFood() {
         patienceTimer -= Time.deltaTime;
-        float patienceNormalized = patienceTimer / enemyData.patienceMax;
+        float patienceNormalized = patienceTimer / EnemyData.patienceMax;
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = patienceNormalized
@@ -132,7 +126,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
             attackCooldownTimer -= Time.deltaTime;
         }
 
-        if (Vector3.Distance(transform.position, playerPosition) <= enemyData.attackRange) {
+        if (Vector3.Distance(transform.position, playerPosition) <= AttackRange) {
             navMeshAgent.isStopped = true;
 
             Vector3 lookAtPosition = playerPosition;
@@ -141,14 +135,15 @@ public class Enemy : MonoBehaviour, IHasProgress {
 
             if (attackCooldownTimer <= 0f) {
                 AttackPlayer();
-                attackCooldownTimer = enemyData.attackCooldown;
+                attackCooldownTimer = AttackCooldown;
             }
         }
     }
 
     private void AttackPlayer() {
+        RaiseAttackPerformed();
         Vector3 damageDirection = Player.Instance.transform.position - transform.position;
-        Player.Instance.GetHealthManager().TakeDamage(enemyData.attackDamage, damageDirection);
+        Player.Instance.GetHealthManager().TakeDamage(AttackDamage, damageDirection);
     }
 
     public void Leave() {
@@ -215,7 +210,17 @@ public class Enemy : MonoBehaviour, IHasProgress {
         return currentEnemyState == EnemyState.WaitingForFood;
     }
 
-    public void ReceiveKnockback(Vector3 knockbackDir) {
+    public override bool IsWalking() {
+        if (currentEnemyState == EnemyState.WalkingToTable || currentEnemyState == EnemyState.AttackingPlayer) {
+            return navMeshAgent != null && navMeshAgent.enabled && navMeshAgent.velocity.sqrMagnitude > 0.01f;
+        }
+
+        return false;
+    }
+
+    public override bool IsAttacking() => currentEnemyState == EnemyState.AttackingPlayer;
+
+    protected override void ReceiveKnockback(Vector3 knockbackDir) {
         // Chạy luồng xử lý thời gian độc lập
         StartCoroutine(KnockbackRoutine(knockbackDir));
     }
@@ -231,6 +236,7 @@ public class Enemy : MonoBehaviour, IHasProgress {
         yield return new WaitForSeconds(knockbackDuration);
         
         rb.isKinematic = true; 
+        
         rb.drag = 0f;
 
         if (this != null) {

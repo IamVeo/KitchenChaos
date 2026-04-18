@@ -10,13 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c688c94e7cc5e844b47824446b074d3, type: 3}
-  m_Name: NormalEnemySO 1
+  m_Name: NormalEnemySO
   m_EditorClassIdentifier: 
-  enemyName: Normal Enemy
+  characterName: Normal Enemy
   prefab: {fileID: 2747464066111718572, guid: 92ea674d1c6295d478f4bd6ebe555094, type: 3}
-  moveSpeed: 5
-  patienceMax: 20
+  moveSpeed: 10
   maxHealth: 100
   attackDamage: 10
   attackRange: 1.5
+  hitRadius: 0
   attackCooldown: 1
+  patienceMax: 30

@@ -10408,7 +10408,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b61725cf0ae71c84291bcc9aaa16b746, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerDataSO: {fileID: 11400000, guid: a68aa1b9627789a4baa24a5dbea22ffd, type: 2}
+  characterDataSO: {fileID: 11400000, guid: a68aa1b9627789a4baa24a5dbea22ffd, type: 2}
+  characterVisual: {fileID: 1548841897}
   gameInput: {fileID: 1908019854}
   countersLayerMask:
     serializedVersion: 2
@@ -11208,7 +11209,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49a45cd72e0e3ca4b83fb6f479c95850, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 1470862846}
+  character: {fileID: 1470862846}
 --- !u!1 &1550223764
 GameObject:
   m_ObjectHideFlags: 0
@@ -15579,8 +15580,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33da91fb768bf554a86914cb61e0f97e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyDataSOList:
-  - {fileID: 11400000, guid: c5d49c02e9d2d3249bdfb3a5e0f988f9, type: 2}
+  enemyPrefabList:
+  - {fileID: 2747464066111718572, guid: 92ea674d1c6295d478f4bd6ebe555094, type: 3}
   spawnPointList:
   - {fileID: 1279798826}
   tableCounterList:
