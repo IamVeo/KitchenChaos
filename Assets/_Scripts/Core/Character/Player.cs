@@ -48,7 +48,10 @@ public class Player : Character, IKitchenObjectParent {
         Instance = this;
     }
 
-    private void Start() {
+    protected override void Start()
+    {
+        base.Start();
+        
         gameInput.OnInteractAction += GameInput_OnInteractAction;
         gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
         gameInput.OnAttackAction += GameInput_OnAttackAction;

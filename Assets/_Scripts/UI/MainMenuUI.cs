@@ -16,7 +16,7 @@ public class MainMenuUI : MonoBehaviour {
 
     private void Awake() {
         playButton.onClick.AddListener(() => {
-            SceneManager.LoadSceneAsync("GameScene");
+            SceneManager.LoadSceneAsync("NewGameScene");
         });
         loginButton.onClick.AddListener(() => {
             SceneManager.LoadSceneAsync("LoginScene");
