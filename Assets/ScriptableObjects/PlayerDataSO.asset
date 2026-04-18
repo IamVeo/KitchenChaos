@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: PlayerDataSO
   m_EditorClassIdentifier: 
   characterName: 
-  prefab: {fileID: 0}
   moveSpeed: 5.5
   maxHealth: 100
   attackDamage: 30
@@ -23,4 +22,3 @@ MonoBehaviour:
   playerHeight: 2
   playerRadius: 0.7
   interactDistance: 2
-  attackDelay: 0.15

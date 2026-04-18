@@ -19,3 +19,8 @@ public enum ShopItemCategory
     Tool,
     Coins
 }
+
+public enum RunEndReason
+{
+    GameOver
+}

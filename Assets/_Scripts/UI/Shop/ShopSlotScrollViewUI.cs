@@ -14,15 +14,26 @@ public class ShopSlotScrollViewUI : MonoBehaviour
     
     private void Awake()
     {
-        scrollRect = GetComponent<ScrollRect>();
-        
-        contentTransformBase.gameObject.SetActive(false);
-        shopSlotUIBase.gameObject.SetActive(false);
+        EnsureScrollRect();
+
+        if (contentTransformBase != null)
+        {
+            contentTransformBase.gameObject.SetActive(false);
+        }
+
+        if (shopSlotUIBase != null)
+        {
+            shopSlotUIBase.gameObject.SetActive(false);
+        }
     }
     
     public Transform SetUpContent(List<ShopItemSO> shopItemList)
     {
         Transform contentTransform = CreateContentRoot();
+        if (contentTransform == null)
+        {
+            return null;
+        }
 
         foreach (ShopItemSO shopItem in shopItemList)
         {
@@ -37,6 +48,10 @@ public class ShopSlotScrollViewUI : MonoBehaviour
     public RectTransform SetUpCoinContent(List<TopUpPackageSo> packageList)
     {
         Transform contentTransform = CreateContentRoot();
+        if (contentTransform == null)
+        {
+            return null;
+        }
 
         if (packageList == null)
         {
@@ -96,13 +111,66 @@ public class ShopSlotScrollViewUI : MonoBehaviour
 
     private Transform CreateContentRoot()
     {
+        if (viewport == null || contentTransformBase == null)
+        {
+            Debug.LogError("[ShopSlotScrollViewUI] Missing viewport/contentTransformBase reference.");
+            return null;
+        }
+
         Transform contentTransform = Instantiate(contentTransformBase, viewport);
         contentTransform.gameObject.SetActive(true);
+
+        // Ensure placeholder/template children from the base content are hidden in every clone.
+        foreach (Transform child in contentTransform)
+        {
+            child.gameObject.SetActive(false);
+        }
+
         return contentTransform;
     }
     
     public void SetScrollViewContent(RectTransform contentRectTransform)
     {
+        EnsureScrollRect();
+        if (scrollRect == null)
+        {
+            Debug.LogError("[ShopSlotScrollViewUI] Missing ScrollRect component.");
+            return;
+        }
+
         scrollRect.content = contentRectTransform;
+    }
+
+    public void ClearGeneratedContents()
+    {
+        EnsureScrollRect();
+
+        if (scrollRect != null)
+        {
+            scrollRect.content = null;
+        }
+
+        if (viewport == null)
+        {
+            return;
+        }
+
+        foreach (Transform child in viewport)
+        {
+            if (child == contentTransformBase)
+            {
+                continue;
+            }
+
+            Destroy(child.gameObject);
+        }
+    }
+
+    private void EnsureScrollRect()
+    {
+        if (scrollRect == null)
+        {
+            scrollRect = GetComponent<ScrollRect>();
+        }
     }
 }

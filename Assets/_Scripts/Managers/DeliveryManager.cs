@@ -1,8 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.EventSystems.EventTrigger;
 
 public class DeliveryManager : MonoBehaviour {
 
@@ -27,12 +25,26 @@ public class DeliveryManager : MonoBehaviour {
         successfulRecipesAmount = 0;
     }
 
-    public void AddSuccessfulDelivery() {
+    public void AddSuccessfulDelivery(Enemy enemy, RecipeSO recipeSO)
+    {
         successfulRecipesAmount++;
         OnRecipeSuccess?.Invoke(this, EventArgs.Empty);
+
+        if (recipeSO == null)
+        {
+            Debug.LogError("[DeliveryManager] RecipeSO is null. Cannot resolve delivery reward from SO.");
+            return;
+        }
+
+        int rewardCoin = Mathf.Max(0, recipeSO.deliveryRewardCoin);
+        int rewardScore = Mathf.Max(0, recipeSO.deliveryRewardScore);
+
+        string eventId = BuildDeliveryEventId(enemy, recipeSO, true);
+        QueueOrderReward(eventId, rewardCoin, rewardScore);
     }
 
-    public void AddFailedDelivery() {
+    public void AddFailedDelivery(Enemy enemy, RecipeSO recipeSO)
+    {
         OnRecipeFailed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -87,4 +99,25 @@ public class DeliveryManager : MonoBehaviour {
         return successfulRecipesAmount;
     }
 
+    private string BuildDeliveryEventId(Enemy enemy, RecipeSO recipeSO, bool success)
+    {
+        string runId = KitchenGameManager.Instance != null ? KitchenGameManager.Instance.CurrentRunId : "no_run";
+        string enemyToken = enemy != null ? enemy.GetInstanceID().ToString() : "no_enemy";
+        string recipeToken = recipeSO != null ? recipeSO.name : "no_recipe";
+        string outcomeToken = success ? "success" : "failed";
+        return $"delivery_{runId}_{enemyToken}_{recipeToken}_{successfulRecipesAmount}_{outcomeToken}";
+    }
+
+    private void QueueOrderReward(string eventId, int rewardCoin, int rewardScore)
+    {
+        if (DeferredRewardManager.Instance == null)
+        {
+            return;
+        }
+
+        DeferredRewardManager.Instance.QueueReward(
+            Mathf.Max(0, rewardCoin),
+            Mathf.Max(0, rewardScore),
+            eventId);
+    }
 }
