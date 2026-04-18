@@ -33,7 +33,7 @@ public class Character : MonoBehaviour
         healthManager.SetMaxHealth(MaxHealth);
     }
 
-    private void Start()
+    protected virtual void Start()
     {
         healthManager.OnDamageTaken += HealthManager_OnDamageTaken;
     }
