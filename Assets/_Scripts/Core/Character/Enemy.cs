@@ -15,6 +15,7 @@ public class Enemy : Character, IHasProgress {
     private EnemyDataSO EnemyData => DataAs<EnemyDataSO>();
     
     private float patienceTimer;
+    private float currentOrderPatienceMax;
     private float attackCooldownTimer;
 
     [SerializeField] private RecipeListSO recipeListSO;
@@ -44,8 +45,15 @@ public class Enemy : Character, IHasProgress {
     }
 
     private void HealthManager_OnDied(object sender, EventArgs e) {
+        bool wasAttackingPlayerAtDeath = currentEnemyState == EnemyState.AttackingPlayer;
+
         if (currentEnemyState == EnemyState.WalkingToTable || currentEnemyState == EnemyState.WaitingForFood) {
             EnemySpawnManager.Instance.FreeTable(targetTable);
+        }
+
+        if (wasAttackingPlayerAtDeath)
+        {
+            QueueEnemyKillReward();
         }
 
         healthManager.OnDied -= HealthManager_OnDied;
@@ -94,9 +102,10 @@ public class Enemy : Character, IHasProgress {
 
 
             currentEnemyState = EnemyState.WaitingForFood;
-            patienceTimer = EnemyData.patienceMax;
 
             waitingRecipeSO = recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)];
+            currentOrderPatienceMax = ResolvePatienceForCurrentOrder(waitingRecipeSO);
+            patienceTimer = currentOrderPatienceMax;
             DeliveryManager.Instance.AddWaitingRecipe(this, waitingRecipeSO);
 
             targetTable.SeatEnemy(this, waitingRecipeSO);
@@ -105,7 +114,9 @@ public class Enemy : Character, IHasProgress {
 
     private void HandleWaitingForFood() {
         patienceTimer -= Time.deltaTime;
-        float patienceNormalized = patienceTimer / EnemyData.patienceMax;
+        float patienceNormalized = currentOrderPatienceMax > 0f
+            ? Mathf.Clamp01(patienceTimer / currentOrderPatienceMax)
+            : 0f;
 
         OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventArgs {
             progressNormalized = patienceNormalized
@@ -192,14 +203,14 @@ public class Enemy : Character, IHasProgress {
         if (currentEnemyState != EnemyState.WaitingForFood) return false;
         
         if(DeliveryManager.Instance.IsRecipeMatching(plateKitchenObject, waitingRecipeSO)) {
-            DeliveryManager.Instance.AddSuccessfulDelivery();
-            DeliveryManager.Instance.RemoveWaitingRecipe(this); // XÓA ORDER
+            DeliveryManager.Instance.AddSuccessfulDelivery(this, waitingRecipeSO);
+            DeliveryManager.Instance.RemoveWaitingRecipe(this); // XOA ORDER
             targetTable.ClearTable();
 
             Leave();
             return true;
         } else {
-            DeliveryManager.Instance.AddFailedDelivery();
+            DeliveryManager.Instance.AddFailedDelivery(this, waitingRecipeSO);
 
             Enrage();
             return false;
@@ -245,5 +256,45 @@ public class Enemy : Character, IHasProgress {
                 navMeshAgent.ResetPath();
             }
         }
+    }
+
+    private void QueueEnemyKillReward()
+    {
+        if (DeferredRewardManager.Instance == null)
+        {
+            return;
+        }
+
+        int rewardCoin = Mathf.Max(0, EnemyData.killRewardCoin);
+        int rewardScore = Mathf.Max(0, EnemyData.killRewardScore);
+
+        string eventId = BuildEnemyKillEventId();
+        DeferredRewardManager.Instance.QueueReward(
+            rewardCoin,
+            rewardScore,
+            eventId);
+    }
+
+    private float ResolvePatienceForCurrentOrder(RecipeSO recipeSO)
+    {
+        if (recipeSO == null)
+        {
+            Debug.LogError("[Enemy] RecipeSO is null. Cannot resolve patience from recipe SO.");
+            return 0.1f;
+        }
+
+        if (recipeSO.orderPatienceSeconds <= 0f)
+        {
+            Debug.LogError($"[Enemy] Recipe '{recipeSO.name}' has invalid orderPatienceSeconds ({recipeSO.orderPatienceSeconds}). Please configure a value > 0.");
+            return 0.1f;
+        }
+
+        return recipeSO.orderPatienceSeconds;
+    }
+
+    private string BuildEnemyKillEventId()
+    {
+        string runId = KitchenGameManager.Instance != null ? KitchenGameManager.Instance.CurrentRunId : "no_run";
+        return $"enemy_killed_{runId}_{GetInstanceID()}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
     }
 }

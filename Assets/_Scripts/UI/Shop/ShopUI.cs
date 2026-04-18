@@ -17,34 +17,46 @@ public class ShopUI : MonoBehaviour
     private bool? lastHasNetwork;
     private bool? lastHasToken;
     private bool isRefreshingCoinsUi;
+    private bool hasPendingCategoryRebuild;
 
     private void OnEnable()
     {
+        if (!ValidateUiDependencies())
+        {
+            return;
+        }
+
         currencyText.text = $"Coins: {CurrencyManager.Instance.GetBalance(CurrencyType.Coin)}";
+
+        StartCoinsStateMonitor();
+        CheckStateAndRefreshCoinsUi(forceRefresh: true);
+
+        if (hasPendingCategoryRebuild)
+        {
+            InitializeCategoryUi();
+        }
     }
     
     private void Start()
     {
-        ShopManager.Instance.OnCoinChanged += ShopManager_OnCoinChanged;
-        ShopManager.Instance.OnItemPurchased += ShopManager_OnItemPurchased;
-
-        LoadTopUpPackagesAndInitUi();
-
-        if (coinsStateMonitorCoroutine != null)
+        if (ShopManager.Instance == null)
         {
-            StopCoroutine(coinsStateMonitorCoroutine);
+            Debug.LogError("[ShopUI] ShopManager.Instance is null. Please ensure a ShopManager exists in the scene before opening Shop UI.");
+            return;
         }
 
-        coinsStateMonitorCoroutine = StartCoroutine(CoinsStateMonitorCoroutine());
+        ShopManager.Instance.OnCoinChanged += ShopManager_OnCoinChanged;
+        ShopManager.Instance.OnItemPurchased += ShopManager_OnItemPurchased;
+    }
+
+    private void OnDisable()
+    {
+        StopCoinsStateMonitor();
     }
 
     private void OnDestroy()
     {
-        if (coinsStateMonitorCoroutine != null)
-        {
-            StopCoroutine(coinsStateMonitorCoroutine);
-            coinsStateMonitorCoroutine = null;
-        }
+        StopCoinsStateMonitor();
 
         if (ShopManager.Instance != null)
         {
@@ -104,24 +116,80 @@ public class ShopUI : MonoBehaviour
     {
         while (isActiveAndEnabled)
         {
-            bool hasNetwork = Application.internetReachability != NetworkReachability.NotReachable;
-            bool hasToken = !string.IsNullOrEmpty(PaymentManager.Instance.CurrentUserToken);
-
-            if (!lastHasNetwork.HasValue || !lastHasToken.HasValue
-                                         || lastHasNetwork.Value != hasNetwork
-                                         || lastHasToken.Value != hasToken)
-            {
-                lastHasNetwork = hasNetwork;
-                lastHasToken = hasToken;
-                LoadTopUpPackagesAndInitUi();
-            }
-
+            CheckStateAndRefreshCoinsUi(forceRefresh: false);
             yield return new WaitForSecondsRealtime(Mathf.Max(0.2f, networkStateCheckIntervalSeconds));
         }
     }
 
+    private void StartCoinsStateMonitor()
+    {
+        if (coinsStateMonitorCoroutine != null)
+        {
+            return;
+        }
+
+        coinsStateMonitorCoroutine = StartCoroutine(CoinsStateMonitorCoroutine());
+    }
+
+    private void StopCoinsStateMonitor()
+    {
+        if (coinsStateMonitorCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(coinsStateMonitorCoroutine);
+        coinsStateMonitorCoroutine = null;
+    }
+
+    private void CheckStateAndRefreshCoinsUi(bool forceRefresh)
+    {
+        bool hasNetwork = Application.internetReachability != NetworkReachability.NotReachable;
+        bool hasToken = !string.IsNullOrEmpty(PaymentManager.Instance.CurrentUserToken);
+
+        bool stateChanged = !lastHasNetwork.HasValue || !lastHasToken.HasValue
+            || lastHasNetwork.Value != hasNetwork
+            || lastHasToken.Value != hasToken;
+
+        if (!forceRefresh && !stateChanged)
+        {
+            return;
+        }
+
+        // Do not update the tracked state while a request is still running;
+        // keep change detection active so the next tick can refresh immediately.
+        if (isRefreshingCoinsUi)
+        {
+            return;
+        }
+
+        lastHasNetwork = hasNetwork;
+        lastHasToken = hasToken;
+        LoadTopUpPackagesAndInitUi();
+    }
+
+
     private void InitializeCategoryUi()
     {
+        if (!CanRebuildCategoryUiNow())
+        {
+            hasPendingCategoryRebuild = true;
+            return;
+        }
+
+        if (!ValidateUiDependencies())
+        {
+            return;
+        }
+
+        if (ShopManager.Instance == null)
+        {
+            Debug.LogError("[ShopUI] Cannot initialize category UI because ShopManager.Instance is null.");
+            return;
+        }
+
+        hasPendingCategoryRebuild = false;
+
         ShopItemCategory selectedCategory = GetDefaultCategory();
         CategoryButtonUI selectedCategoryButton = categoryVerticalTabsUI.GetSelectedCategoryButtonUI();
         if (selectedCategoryButton != null)
@@ -133,6 +201,9 @@ public class ShopUI : MonoBehaviour
         {
             runtimeTopUpPackageList = new List<TopUpPackageSo>();
         }
+
+        // Remove stale content roots from previous rebuilds before creating new category contents.
+        shopSlotScrollViewUI.ClearGeneratedContents();
 
         Dictionary<ShopItemCategory, RectTransform> categoryContentDict = BuildCategoryContentMap(runtimeTopUpPackageList);
         categoryVerticalTabsUI.InitCategoryTabs(categoryContentDict);
@@ -147,8 +218,21 @@ public class ShopUI : MonoBehaviour
         CategoryButtonUI selectedCategoryButtonUI = categoryVerticalTabsUI.GetSelectedCategoryButtonUI();
         if (selectedCategoryButtonUI != null)
         {
-            shopSlotScrollViewUI.SetScrollViewContent(selectedCategoryButtonUI.GetCategoryScrollViewContent());
+            RectTransform selectedContent = selectedCategoryButtonUI.GetCategoryScrollViewContent();
+            if (selectedContent != null)
+            {
+                shopSlotScrollViewUI.SetScrollViewContent(selectedContent);
+            }
+            else
+            {
+                Debug.LogWarning("[ShopUI] Selected category content is null. Check ShopSlotScrollViewUI prefab references.");
+            }
         }
+    }
+
+    private bool CanRebuildCategoryUiNow()
+    {
+        return isActiveAndEnabled && gameObject.activeInHierarchy;
     }
 
     private static ShopItemCategory GetDefaultCategory()
@@ -175,12 +259,34 @@ public class ShopUI : MonoBehaviour
             }
 
             Transform contentTransform = shopSlotScrollViewUI.SetUpContent(shopItemList);
-            categoryContentDict[category] = contentTransform.GetComponent<RectTransform>();
+            if (contentTransform == null)
+            {
+                Debug.LogWarning($"[ShopUI] Failed to create content root for category '{category}'.");
+                continue;
+            }
+
+            RectTransform contentRect = contentTransform.GetComponent<RectTransform>();
+            if (contentRect == null)
+            {
+                Debug.LogWarning($"[ShopUI] Missing RectTransform on generated content for category '{category}'.");
+                continue;
+            }
+
+            categoryContentDict[category] = contentRect;
         }
 
-        categoryContentDict[ShopItemCategory.Coins] = string.IsNullOrWhiteSpace(coinsTabMessage)
+        RectTransform coinsContent = string.IsNullOrWhiteSpace(coinsTabMessage)
             ? shopSlotScrollViewUI.SetUpCoinContent(topUpPackageList)
             : shopSlotScrollViewUI.SetUpCenteredMessageContent(coinsTabMessage);
+
+        if (coinsContent != null)
+        {
+            categoryContentDict[ShopItemCategory.Coins] = coinsContent;
+        }
+        else
+        {
+            Debug.LogWarning("[ShopUI] Failed to create Coins tab content.");
+        }
 
         return categoryContentDict;
     }
@@ -240,15 +346,41 @@ public class ShopUI : MonoBehaviour
     
     public void OnCategoryButtonClicked(CategoryButtonUI categoryButtonUI)
     {
+        if (categoryButtonUI == null)
+        {
+            return;
+        }
+
+        if (!ValidateUiDependencies())
+        {
+            return;
+        }
+
         categoryVerticalTabsUI.SetSelectedCategory(categoryButtonUI.GetButtonCategory());
-        shopSlotScrollViewUI.SetScrollViewContent(categoryButtonUI.GetCategoryScrollViewContent());
+
+        RectTransform contentRectTransform = categoryButtonUI.GetCategoryScrollViewContent();
+        if (contentRectTransform != null)
+        {
+            shopSlotScrollViewUI.SetScrollViewContent(contentRectTransform);
+        }
+    }
+
+    private bool ValidateUiDependencies()
+    {
+        if (currencyText == null || categoryVerticalTabsUI == null || shopSlotScrollViewUI == null)
+        {
+            Debug.LogError("[ShopUI] Missing serialized references. Re-open ShopUI prefab and rebind Currency Text / CategoryVerticalTabsUI / ShopSlotScrollViewUI.");
+            return false;
+        }
+
+        return true;
     }
 
     public void OnBackButtonClicked()
     {
         gameObject.SetActive(false);
     }
-    
+
     // cheat coin temp method
     public void AddCoins(int amount)
     {

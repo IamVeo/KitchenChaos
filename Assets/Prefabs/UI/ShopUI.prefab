@@ -923,6 +923,7 @@ MonoBehaviour:
   viewport: {fileID: 266857954361289747}
   contentTransformBase: {fileID: 266857954292903025}
   shopSlotUIBase: {fileID: 1128795023902924612}
+  messageFont: {fileID: 0}
 --- !u!1 &266857954361289748
 GameObject:
   m_ObjectHideFlags: 0
@@ -2394,9 +2395,8 @@ MonoBehaviour:
   currencyText: {fileID: 266857954346795508}
   categoryVerticalTabsUI: {fileID: 266857954886186392}
   shopSlotScrollViewUI: {fileID: 266857954359613878}
-  topUpPackageListSo: {fileID: 11400000, guid: 8e72e854e9dee4249b183843664f585a, type: 2}
-  topUpPackageButtonPrefab: {fileID: 2896192449366889838, guid: 817d259feacb1a3448c0b8ca500cd64e,
-    type: 3}
+  fallbackTopUpIcon: {fileID: 0}
+  networkStateCheckIntervalSeconds: 0.75
 --- !u!114 &1600692859119517975
 MonoBehaviour:
   m_ObjectHideFlags: 0
