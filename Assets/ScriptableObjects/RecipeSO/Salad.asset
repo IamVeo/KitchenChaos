@@ -12,7 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0bc8e78076f7bb47894253fa280c634, type: 3}
   m_Name: Salad
   m_EditorClassIdentifier: 
+  id: 
+  itemName: 
+  category: 0
+  price: 0
+  icon: {fileID: 0}
   kitchenObjectSOList:
   - {fileID: 11400000, guid: caea38706d21dfa40a744b22f2f86434, type: 2}
   - {fileID: 11400000, guid: 455ac2b492a3c3442bf926b427bb40d2, type: 2}
   recipeName: Salad
+  deliveryRewardCoin: 10
+  deliveryRewardScore: 15
+  orderPatienceSeconds: 20
