@@ -15,3 +15,17 @@ public class HighScoreUpdateResponse
     public bool updated;
 }
 
+[Serializable]
+public class TopHighScoreEntry
+{
+    public string username;
+    public int highScore;
+}
+
+[Serializable]
+public class HighScoreMeResponse
+{
+    public string username;
+    public int highScore;
+    public int rank;
+}
