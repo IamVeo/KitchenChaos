@@ -64,9 +64,9 @@ public class Player : Character, IKitchenObjectParent {
     }
 
     private void GameInput_OnAttackAction(object sender, EventArgs e) {
-        // if (!KitchenGameManager.Instance.IsGamePlaying()) return;
+        if (!KitchenGameManager.Instance.IsGamePlaying()) return;
         if (isAttacking) return;
-        
+
         isAttacking = true;
         Invoke(nameof(ResetAttacking), AttackCooldown);
         Attack();
@@ -96,6 +96,12 @@ public class Player : Character, IKitchenObjectParent {
     // ======================= Handle Player Input and Interactions =======================
 
     private void Update() {
+        if (!KitchenGameManager.Instance.IsGamePlaying()) {
+            rb.velocity = Vector3.zero;
+            isWalking = false;
+            return;
+        }
+
         // 1. Cập nhật Timer
         if (knockbackTimer > 0) {
             knockbackTimer -= Time.deltaTime;
@@ -114,9 +120,13 @@ public class Player : Character, IKitchenObjectParent {
 
     private void FixedUpdate()
     {
+        if (!KitchenGameManager.Instance.IsGamePlaying()) {
+            rb.velocity = Vector3.zero;
+            return;
+        }
 
         HandleRotation();
-        
+
         // Chỉ chạy vật lý di chuyển khi không bị choáng và không đánh nhau
         if (knockbackTimer <= 0 && !isAttacking)
             HandleMovement();

@@ -9,6 +9,8 @@ public class AuthManager : MonoBehaviour {
     [Header("API Settings")]
     private string baseUrl = "http://159.89.200.36:8080/api/auth";
     public static string JwtToken { get; private set; }
+    public static string CurrentUsername { get; private set; }
+    public const string LastUsernamePrefsKey = "KC_LastUsername";
 
     [Header("UI Panels")]
     [SerializeField] private GameObject loginPanel;
@@ -81,6 +83,7 @@ public class AuthManager : MonoBehaviour {
 
     public static void Logout() {
         JwtToken = null;
+        CurrentUsername = null;
 
         // Đồng bộ trạng thái logout cho PaymentManager.
         PaymentManager existingPaymentManager = Object.FindObjectOfType<PaymentManager>();
@@ -131,7 +134,11 @@ public class AuthManager : MonoBehaviour {
                     }
 
                     JwtToken = jwtResponse.token;
+                    CurrentUsername = jwtResponse.username;
+                    PlayerPrefs.SetString(LastUsernamePrefsKey, CurrentUsername ?? string.Empty);
+                    PlayerPrefs.Save();
                     PaymentManager.Instance.SetUserToken(JwtToken);
+                    HighScoreSyncManager.Instance.OnUserAuthenticated(CurrentUsername);
 
                     targetFeedbackText.text = $"Welcome, {jwtResponse.username}!";
                     targetFeedbackText.color = Color.green;
