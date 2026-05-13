@@ -14,7 +14,10 @@ public class MainMenuUI : MonoBehaviour {
     [SerializeField] private Button shopButton;
     [SerializeField] private Button quitButton;
     [SerializeField] private Button leaderboardButton;
+    
+    [Header("UI Popups")]
     [SerializeField] private GameObject shopUIGameObject;
+    [SerializeField] private GameObject leaderboardUIGameObject;
 
     private void Awake() {
         playButton.onClick.AddListener(() => {
@@ -29,6 +32,9 @@ public class MainMenuUI : MonoBehaviour {
         });
         shopButton.onClick.AddListener(() => {
             shopUIGameObject.SetActive(true);
+        });
+        leaderboardButton.onClick.AddListener(() => {
+            leaderboardUIGameObject.SetActive(true);
         });
         quitButton.onClick.AddListener(() => {
             Application.Quit();

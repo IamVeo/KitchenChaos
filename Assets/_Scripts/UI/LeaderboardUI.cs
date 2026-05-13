@@ -27,11 +27,8 @@ public class LeaderboardUI : MonoBehaviour
 
     [Header("Offline UI")]
     [SerializeField] private TextMeshProUGUI offlineScoreText;
-
-    [Header("Others")] 
-    [SerializeField] private Button backButton;
     
-    private readonly List<LeaderboardRowUI> spawnedRows = new List<LeaderboardRowUI>();
+    private List<LeaderboardRowUI> currentTop5Rows = new List<LeaderboardRowUI>();
     private Coroutine refreshCoroutine;
 
     private void OnEnable()
@@ -115,7 +112,7 @@ public class LeaderboardUI : MonoBehaviour
             LeaderboardRowUI row = Instantiate(top5RowTemplate, top5Container);
             row.gameObject.SetActive(true);
             row.SetData(i + 1, top5[i].username, top5[i].highScore, false);
-            spawnedRows.Add(row);
+            currentTop5Rows.Add(row);
         }
 
         if (playerRow != null)
@@ -143,15 +140,15 @@ public class LeaderboardUI : MonoBehaviour
 
     private void ClearTop5Rows()
     {
-        for (int i = 0; i < spawnedRows.Count; i++)
+        for (int i = 0; i < currentTop5Rows.Count; i++)
         {
-            if (spawnedRows[i] != null)
+            if (currentTop5Rows[i] != null)
             {
-                Destroy(spawnedRows[i].gameObject);
+                Destroy(currentTop5Rows[i].gameObject);
             }
         }
 
-        spawnedRows.Clear();
+        currentTop5Rows.Clear();
     }
 
     private UnityWebRequest CreateGetRequest(string url, bool includeAuth)
