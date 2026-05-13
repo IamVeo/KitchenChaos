@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -12,6 +13,7 @@ public class MainMenuUI : MonoBehaviour {
     [SerializeField] private Button logoutButton;
     [SerializeField] private Button shopButton;
     [SerializeField] private Button quitButton;
+    [SerializeField] private Button leaderboardButton;
     [SerializeField] private GameObject shopUIGameObject;
 
     private void Awake() {
@@ -34,6 +36,7 @@ public class MainMenuUI : MonoBehaviour {
 
         Time.timeScale = 1f;
         shopUIGameObject.SetActive(false);
+        
     }
     
     private void Start() {
@@ -41,12 +44,14 @@ public class MainMenuUI : MonoBehaviour {
     }
 
     private void UpdateLoginStatus() {
-        if (string.IsNullOrEmpty(AuthManager.JwtToken)) {
-            loginButton.gameObject.SetActive(true);
-            logoutButton.gameObject.SetActive(false);
-        } else {
-            loginButton.gameObject.SetActive(false);
-            logoutButton.gameObject.SetActive(true);
-        }
+        
+        bool isLoggedIn = !string.IsNullOrEmpty(AuthManager.JwtToken);
+        
+        playButton.gameObject.SetActive(isLoggedIn);
+        logoutButton.gameObject.SetActive(isLoggedIn);
+        shopButton.gameObject.SetActive(isLoggedIn);
+        leaderboardButton.gameObject.SetActive(isLoggedIn);
+        
+        loginButton.gameObject.SetActive(!isLoggedIn);
     }
 }

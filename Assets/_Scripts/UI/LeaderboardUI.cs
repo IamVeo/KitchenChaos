@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UI;
 
 public class LeaderboardUI : MonoBehaviour
 {
@@ -27,6 +28,9 @@ public class LeaderboardUI : MonoBehaviour
     [Header("Offline UI")]
     [SerializeField] private TextMeshProUGUI offlineScoreText;
 
+    [Header("Others")] 
+    [SerializeField] private Button backButton;
+    
     private readonly List<LeaderboardRowUI> spawnedRows = new List<LeaderboardRowUI>();
     private Coroutine refreshCoroutine;
 
@@ -218,6 +222,11 @@ public class LeaderboardUI : MonoBehaviour
     private class TopHighScoreList
     {
         public TopHighScoreEntry[] items;
+    }
+    
+    public void OnBackButtonClicked()
+    {
+        gameObject.SetActive(false);
     }
 }
 
