@@ -35,6 +35,8 @@ public class ShopUI : MonoBehaviour
         {
             InitializeCategoryUi();
         }
+
+        NotifyMainMenuGreeting(false);
     }
     
     private void Start()
@@ -52,6 +54,7 @@ public class ShopUI : MonoBehaviour
     private void OnDisable()
     {
         StopCoinsStateMonitor();
+        NotifyMainMenuGreeting(true);
     }
 
     private void OnDestroy()
@@ -385,5 +388,14 @@ public class ShopUI : MonoBehaviour
     public void AddCoins(int amount)
     {
         CurrencyManager.Instance.AddCurrency(CurrencyType.Coin, amount);
+    }
+
+    private void NotifyMainMenuGreeting(bool isVisible)
+    {
+        MainMenuUI mainMenu = FindObjectOfType<MainMenuUI>();
+        if (mainMenu != null)
+        {
+            mainMenu.SetGreetingVisible(isVisible);
+        }
     }
 }

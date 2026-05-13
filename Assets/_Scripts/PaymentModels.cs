@@ -15,6 +15,9 @@ public class PaymentUrlResponse
 
     // New backend may return paymentUrl instead of url.
     public string paymentUrl;
+
+    // New backend includes transaction reference for tracking pending payments.
+    public string txnRef;
 }
 
 [Serializable]
@@ -103,4 +106,3 @@ public class PaymentHistoryList
         data = new List<PaymentHistoryResponse>();
     }
 }
-
