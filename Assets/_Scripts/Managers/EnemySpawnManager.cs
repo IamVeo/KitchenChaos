@@ -24,6 +24,10 @@ public class EnemySpawnManager : MonoBehaviour {
         spawnTimer = spawnTimerMax;
     }
     private void Update() {
+        if (KitchenGameManager.Instance != null && !KitchenGameManager.Instance.IsGamePlaying()) {
+            return;
+        }
+
         if (currentEnemyCount < maxEnemies && availableTableList.Count > 0) {
 
             spawnTimer -= Time.deltaTime;

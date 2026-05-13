@@ -73,6 +73,7 @@ public class KitchenGameManager : MonoBehaviour {
                     state = State.GamePlaying;
                     gamePlayingTimer = gamePlayingTimerMax;
                     currentRunId = CreateNewRunId();
+                    GameInput.Instance?.SetGameplayInputEnabled(true);
                     OnStateChanged?.Invoke(this, EventArgs.Empty);
                     OnRunStarted?.Invoke(this, new RunStartedEventArgs {
                         runId = currentRunId
@@ -137,6 +138,7 @@ public class KitchenGameManager : MonoBehaviour {
         }
 
         state = State.GameOver;
+        GameInput.Instance?.SetGameplayInputEnabled(false);
         OnStateChanged?.Invoke(this, EventArgs.Empty);
         OnRunEnded?.Invoke(this, new RunEndedEventArgs {
             runId = currentRunId,

@@ -58,7 +58,19 @@ public class RunScoreManager
 
         PlayerPrefs.SetInt(HIGH_SCORE_PLAYER_PREFS_KEY, score);
         PlayerPrefs.Save();
+        HighScoreSyncManager.QueuePendingHighScoreForCurrentUser(score);
         return true;
+    }
+
+    public void SetHighScoreFromServer(int score)
+    {
+        if (score < 0)
+        {
+            return;
+        }
+
+        PlayerPrefs.SetInt(HIGH_SCORE_PLAYER_PREFS_KEY, score);
+        PlayerPrefs.Save();
     }
 
     public void FinalizeRunOnGameOver()

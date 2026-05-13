@@ -35,6 +35,7 @@ public class GameInput : MonoBehaviour {
 
 
     private PlayerInputActions playerInputActions;
+    private bool isGameplayInputEnabled = true;
 
 
     private void Awake() {
@@ -47,7 +48,11 @@ public class GameInput : MonoBehaviour {
             playerInputActions.LoadBindingOverridesFromJson(PlayerPrefs.GetString(PLAYER_PREFS_BINDINGS));
         }
 
-        playerInputActions.Player.Enable();
+        if (isGameplayInputEnabled) {
+            playerInputActions.Player.Enable();
+        } else {
+            playerInputActions.Player.Disable();
+        }
 
         playerInputActions.Player.Interact.performed += Interact_performed;
         playerInputActions.Player.InteractAlternate.performed += InteractAlternate_performed;
@@ -81,6 +86,10 @@ public class GameInput : MonoBehaviour {
     }
 
     public Vector2 GetMovementVectorNormalized() {
+        if (!isGameplayInputEnabled) {
+            return Vector2.zero;
+        }
+
         Vector2 inputVector = playerInputActions.Player.Move.ReadValue<Vector2>();
 
         inputVector = inputVector.normalized;
@@ -173,7 +182,11 @@ public class GameInput : MonoBehaviour {
         inputAction.PerformInteractiveRebinding(bindingIndex)
             .OnComplete(callback => {
                 callback.Dispose();
-                playerInputActions.Player.Enable();
+                if (isGameplayInputEnabled) {
+                    playerInputActions.Player.Enable();
+                } else {
+                    playerInputActions.Player.Disable();
+                }
                 onActionRebound();
 
                 PlayerPrefs.SetString(PLAYER_PREFS_BINDINGS, playerInputActions.SaveBindingOverridesAsJson());
@@ -182,6 +195,16 @@ public class GameInput : MonoBehaviour {
                 OnBindingRebind?.Invoke(this, EventArgs.Empty);
             })
             .Start();
+    }
+
+    public void SetGameplayInputEnabled(bool enabled) {
+        isGameplayInputEnabled = enabled;
+
+        if (isGameplayInputEnabled) {
+            playerInputActions.Player.Enable();
+        } else {
+            playerInputActions.Player.Disable();
+        }
     }
 
 }

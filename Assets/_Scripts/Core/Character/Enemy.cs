@@ -61,6 +61,13 @@ public class Enemy : Character, IHasProgress {
     }
 
     private void Update() {
+        if (KitchenGameManager.Instance != null && !KitchenGameManager.Instance.IsGamePlaying()) {
+            if (navMeshAgent != null && navMeshAgent.enabled) {
+                navMeshAgent.isStopped = true;
+            }
+            return;
+        }
+
         if (!navMeshAgent.enabled && currentEnemyState != EnemyState.WaitingForFood) return;
 
         switch (currentEnemyState) {
