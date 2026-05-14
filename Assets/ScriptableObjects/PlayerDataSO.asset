@@ -18,7 +18,7 @@ MonoBehaviour:
   attackDamage: 30
   attackRange: 1
   hitRadius: 1.2
-  attackCooldown: 0.1
+  attackCooldown: 0.2
   playerHeight: 2
   playerRadius: 0.7
   interactDistance: 2

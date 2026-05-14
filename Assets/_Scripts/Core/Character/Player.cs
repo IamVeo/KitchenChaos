@@ -60,6 +60,7 @@ public class Player : Character, IKitchenObjectParent {
     }
 
     private void HealthManager_OnDied(object sender, EventArgs e) {
+        gameObject.SetActive(false);
         KitchenGameManager.Instance.SetGameOver();
     }
 

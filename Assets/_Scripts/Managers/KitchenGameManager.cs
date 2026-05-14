@@ -138,7 +138,7 @@ public class KitchenGameManager : MonoBehaviour {
         }
 
         state = State.GameOver;
-        GameInput.Instance?.SetGameplayInputEnabled(false);
+        GameInput.Instance?.SetGameplayInputEnabled(true);
         OnStateChanged?.Invoke(this, EventArgs.Empty);
         OnRunEnded?.Invoke(this, new RunEndedEventArgs {
             runId = currentRunId,
