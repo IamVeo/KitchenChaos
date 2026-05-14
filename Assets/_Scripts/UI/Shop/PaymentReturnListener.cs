@@ -242,7 +242,7 @@ public class PaymentReturnListener : MonoBehaviour
 
         if (coinsToAdd > 0)
         {
-            CurrencyManager.Instance.AddCurrency(CurrencyType.Coin, coinsToAdd);
+            CurrencyManager.Instance.AddCurrency(CurrencyType.Coin, coinsToAdd, false);
             DebugLog($"[PaymentReturnListener] Added {coinsToAdd} coin(s) from new successful payment(s).");
         }
         else

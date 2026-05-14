@@ -134,13 +134,14 @@ public class AuthManager : MonoBehaviour {
                     }
 
                     JwtToken = jwtResponse.token;
-                    CurrentUsername = jwtResponse.username;
+                    CurrentUsername = string.IsNullOrWhiteSpace(jwtResponse.username) ? username : jwtResponse.username;
                     PlayerPrefs.SetString(LastUsernamePrefsKey, CurrentUsername ?? string.Empty);
                     PlayerPrefs.Save();
                     PaymentManager.Instance.SetUserToken(JwtToken);
                     HighScoreSyncManager.Instance.OnUserAuthenticated(CurrentUsername);
+                    CoinSyncManager.Instance.OnUserAuthenticated(CurrentUsername);
 
-                    targetFeedbackText.text = $"Welcome, {jwtResponse.username}!";
+                    targetFeedbackText.text = $"Welcome, {CurrentUsername}!";
                     targetFeedbackText.color = Color.green;
 
                     UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("MainMenuScene");

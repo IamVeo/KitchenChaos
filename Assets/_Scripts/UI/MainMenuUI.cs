@@ -57,9 +57,9 @@ public class MainMenuUI : MonoBehaviour {
         
         bool isLoggedIn = !string.IsNullOrEmpty(AuthManager.JwtToken);
         
-        playButton.gameObject.SetActive(isLoggedIn);
+        // playButton.gameObject.SetActive(isLoggedIn);
         logoutButton.gameObject.SetActive(isLoggedIn);
-        shopButton.gameObject.SetActive(isLoggedIn);
+        // shopButton.gameObject.SetActive(isLoggedIn);
         leaderboardButton.gameObject.SetActive(isLoggedIn);
         
         loginButton.gameObject.SetActive(!isLoggedIn);

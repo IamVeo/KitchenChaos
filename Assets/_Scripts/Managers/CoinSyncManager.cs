@@ -3,16 +3,16 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class HighScoreSyncManager : MonoBehaviour
+public class CoinSyncManager : MonoBehaviour
 {
-    private const string PendingScoreKeyPrefix = "KC_HighScore_Pending_";
-    private const string LastSyncedScoreKeyPrefix = "KC_HighScore_LastSynced_";
+    private const string PendingDeltaKeyPrefix = "KC_Coin_Pending_";
+    private const string PendingDeltaAnonymousKey = "KC_Coin_Pending_Anonymous";
 
-    private static HighScoreSyncManager _instance;
+    private static CoinSyncManager _instance;
 
-    [SerializeField] private string backendBaseUrl = "http://159.89.200.36:8080/api/high-scores";
+    [SerializeField] private string backendBaseUrl = "http://159.89.200.36:8080/api/coins/delta";
     [SerializeField] private int requestTimeout = 20;
-    [SerializeField] private float syncCheckInterval = 3f;
+    [SerializeField] private float syncCheckInterval = 5f;
     [SerializeField] private float maxBackoffSeconds = 60f;
     [SerializeField] private bool enableDebugLog = true;
 
@@ -21,17 +21,17 @@ public class HighScoreSyncManager : MonoBehaviour
     private float nextAllowedSyncTime;
     private int consecutiveFailures;
 
-    public static HighScoreSyncManager Instance
+    public static CoinSyncManager Instance
     {
         get
         {
             if (_instance == null)
             {
-                _instance = FindObjectOfType<HighScoreSyncManager>();
+                _instance = FindObjectOfType<CoinSyncManager>();
                 if (_instance == null)
                 {
-                    GameObject managerObject = new GameObject("HighScoreSyncManager");
-                    _instance = managerObject.AddComponent<HighScoreSyncManager>();
+                    GameObject managerObject = new GameObject("CoinSyncManager");
+                    _instance = managerObject.AddComponent<CoinSyncManager>();
                     DontDestroyOnLoad(managerObject);
                 }
             }
@@ -68,31 +68,29 @@ public class HighScoreSyncManager : MonoBehaviour
         nextCheckTime = 0f;
     }
 
-    public static bool QueuePendingHighScoreForCurrentUser(int score)
+    public static bool QueuePendingDelta(int delta)
     {
-        if (score <= 0)
+        if (delta == 0)
         {
             return false;
         }
 
         string username = ResolveUsernameForPending();
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            return false;
-        }
-
-        string pendingKey = BuildPendingScoreKey(username);
+        string pendingKey = BuildPendingDeltaKey(username);
         int existingPending = PlayerPrefs.GetInt(pendingKey, 0);
-        if (score <= existingPending)
+        int updatedPending = existingPending + delta;
+
+        if (updatedPending == 0)
         {
-            return false;
+            PlayerPrefs.DeleteKey(pendingKey);
+        }
+        else
+        {
+            PlayerPrefs.SetInt(pendingKey, updatedPending);
         }
 
-        PlayerPrefs.SetInt(pendingKey, score);
         PlayerPrefs.Save();
-
         Instance.TriggerSyncNow();
-
         return true;
     }
 
@@ -103,6 +101,7 @@ public class HighScoreSyncManager : MonoBehaviour
             return;
         }
 
+        MigrateAnonymousPending(username);
         TriggerSyncNow();
     }
 
@@ -129,8 +128,8 @@ public class HighScoreSyncManager : MonoBehaviour
             return;
         }
 
-        int pendingScore = GetPendingScore(username);
-        if (pendingScore <= 0)
+        int pendingDelta = GetPendingDelta(username);
+        if (pendingDelta == 0)
         {
             return;
         }
@@ -140,14 +139,14 @@ public class HighScoreSyncManager : MonoBehaviour
             return;
         }
 
-        StartCoroutine(SyncHighScoreCoroutine(username, pendingScore));
+        StartCoroutine(SyncCoinDeltaCoroutine(username, pendingDelta));
     }
 
-    private IEnumerator SyncHighScoreCoroutine(string username, int pendingScore)
+    private IEnumerator SyncCoinDeltaCoroutine(string username, int pendingDelta)
     {
         isSyncInProgress = true;
 
-        HighScoreUpdateRequest payload = new HighScoreUpdateRequest { score = pendingScore };
+        UpdateCoinDeltaRequest payload = new UpdateCoinDeltaRequest { delta = pendingDelta };
         string jsonPayload = JsonUtility.ToJson(payload);
 
         using (UnityWebRequest request = new UnityWebRequest(backendBaseUrl, UnityWebRequest.kHttpVerbPUT))
@@ -180,8 +179,8 @@ public class HighScoreSyncManager : MonoBehaviour
 
             if (request.responseCode == 400)
             {
-                DebugLog($"[HighScoreSync] Invalid score payload: {request.downloadHandler.text}");
-                ClearPendingScore(username);
+                DebugLog($"[CoinSync] Invalid delta payload: {request.downloadHandler.text}");
+                ClearPendingDelta(username);
                 isSyncInProgress = false;
                 yield break;
             }
@@ -193,10 +192,10 @@ public class HighScoreSyncManager : MonoBehaviour
                 yield break;
             }
 
-            HighScoreUpdateResponse response = null;
+            UpdateCoinDeltaResponse response = null;
             try
             {
-                response = JsonUtility.FromJson<HighScoreUpdateResponse>(request.downloadHandler.text);
+                response = JsonUtility.FromJson<UpdateCoinDeltaResponse>(request.downloadHandler.text);
             }
             catch (Exception ex)
             {
@@ -205,15 +204,23 @@ public class HighScoreSyncManager : MonoBehaviour
                 yield break;
             }
 
-            if (response != null && response.currentHighScore >= 0)
+            if (response != null)
             {
-                RunScoreManager.Instance.SetHighScoreFromServer(response.currentHighScore);
-                SetLastSyncedScore(username, response.currentHighScore);
+                int newPending = pendingDelta - response.deltaApplied;
+                if (newPending == 0)
+                {
+                    ClearPendingDelta(username);
+                }
+                else
+                {
+                    SetPendingDelta(username, newPending);
+                }
+
+                CurrencyManager.Instance.SetBalance(CurrencyType.Coin, response.currentCoins, false);
             }
 
-            ClearPendingScore(username);
             ResetBackoff();
-            DebugLog($"[HighScoreSync] Sync success. updated={response != null && response.updated}");
+            DebugLog($"[CoinSync] Sync success. deltaApplied={(response != null ? response.deltaApplied : 0)}");
         }
 
         isSyncInProgress = false;
@@ -221,7 +228,7 @@ public class HighScoreSyncManager : MonoBehaviour
 
     private void HandleFailure(string reason)
     {
-        DebugLog($"[HighScoreSync] Sync failed: {reason}");
+        DebugLog($"[CoinSync] Sync failed: {reason}");
         consecutiveFailures++;
         float backoffSeconds = Mathf.Min(maxBackoffSeconds, Mathf.Pow(2f, consecutiveFailures));
         nextAllowedSyncTime = Time.unscaledTime + backoffSeconds;
@@ -240,33 +247,54 @@ public class HighScoreSyncManager : MonoBehaviour
             return AuthManager.CurrentUsername;
         }
 
-        return PlayerPrefs.GetString(AuthManager.LastUsernamePrefsKey, string.Empty);
+        string lastUsername = PlayerPrefs.GetString(AuthManager.LastUsernamePrefsKey, string.Empty);
+        if (!string.IsNullOrWhiteSpace(lastUsername))
+        {
+            return lastUsername;
+        }
+
+        return string.Empty;
     }
 
-    private static string BuildPendingScoreKey(string username)
+    private static string BuildPendingDeltaKey(string username)
     {
-        return PendingScoreKeyPrefix + username;
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return PendingDeltaAnonymousKey;
+        }
+
+        return PendingDeltaKeyPrefix + username;
     }
 
-    private static string BuildLastSyncedScoreKey(string username)
+    private static int GetPendingDelta(string username)
     {
-        return LastSyncedScoreKeyPrefix + username;
+        return PlayerPrefs.GetInt(BuildPendingDeltaKey(username), 0);
     }
 
-    private static int GetPendingScore(string username)
+    private static void SetPendingDelta(string username, int delta)
     {
-        return PlayerPrefs.GetInt(BuildPendingScoreKey(username), 0);
-    }
-
-    private static void ClearPendingScore(string username)
-    {
-        PlayerPrefs.DeleteKey(BuildPendingScoreKey(username));
+        PlayerPrefs.SetInt(BuildPendingDeltaKey(username), delta);
         PlayerPrefs.Save();
     }
 
-    private static void SetLastSyncedScore(string username, int score)
+    private static void ClearPendingDelta(string username)
     {
-        PlayerPrefs.SetInt(BuildLastSyncedScoreKey(username), score);
+        PlayerPrefs.DeleteKey(BuildPendingDeltaKey(username));
+        PlayerPrefs.Save();
+    }
+
+    private static void MigrateAnonymousPending(string username)
+    {
+        int anonymousPending = PlayerPrefs.GetInt(PendingDeltaAnonymousKey, 0);
+        if (anonymousPending == 0)
+        {
+            return;
+        }
+
+        string userKey = BuildPendingDeltaKey(username);
+        int userPending = PlayerPrefs.GetInt(userKey, 0);
+        PlayerPrefs.SetInt(userKey, userPending + anonymousPending);
+        PlayerPrefs.DeleteKey(PendingDeltaAnonymousKey);
         PlayerPrefs.Save();
     }
 
