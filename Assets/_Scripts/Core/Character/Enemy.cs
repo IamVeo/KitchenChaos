@@ -17,17 +17,19 @@ public class Enemy : Character, IHasProgress {
     private float patienceTimer;
     private float currentOrderPatienceMax;
     private float attackCooldownTimer;
+    private bool isAttacking;
 
     [SerializeField] private RecipeListSO recipeListSO;
     private RecipeSO waitingRecipeSO;
     
-    private float knockbackDuration = 0.4f;
+    private float knockbackDuration = 0.25f;
     private float knockbackForce = 10f;
     private float knockbackDrag = 3.5f;
 
     protected override void Awake() {
         base.Awake();
         navMeshAgent = GetComponent<NavMeshAgent>();
+        attackCooldownTimer = AttackCooldown;
     }
 
     public bool IsAttackingPlayer() => currentEnemyState == EnemyState.AttackingPlayer;
@@ -135,14 +137,20 @@ public class Enemy : Character, IHasProgress {
     }
 
     private void HandleAttackingPlayer() {
+        if (attackCooldownTimer > 0) {
+            attackCooldownTimer -= Time.deltaTime;
+        }
+
+        if (isAttacking) {
+            navMeshAgent.isStopped = true;
+            return;
+        }
+
         navMeshAgent.isStopped = false;
         navMeshAgent.stoppingDistance = 0.8f;
         Vector3 playerPosition = Player.Instance.transform.position;
         navMeshAgent.SetDestination(playerPosition);
 
-        if (attackCooldownTimer > 0) {
-            attackCooldownTimer -= Time.deltaTime;
-        }
 
         if (Vector3.Distance(transform.position, playerPosition) <= AttackRange) {
             navMeshAgent.isStopped = true;
@@ -159,9 +167,16 @@ public class Enemy : Character, IHasProgress {
     }
 
     private void AttackPlayer() {
+        isAttacking = true;
+        Invoke(nameof(ResetAttacking), AttackCooldown);
+
         RaiseAttackPerformed();
         Vector3 damageDirection = Player.Instance.transform.position - transform.position;
         Player.Instance.GetHealthManager().TakeDamage(AttackDamage, damageDirection);
+    }
+
+    private void ResetAttacking() {
+        isAttacking = false;
     }
 
     public void Leave() {
@@ -236,7 +251,7 @@ public class Enemy : Character, IHasProgress {
         return false;
     }
 
-    public override bool IsAttacking() => currentEnemyState == EnemyState.AttackingPlayer;
+    public override bool IsAttacking() => isAttacking;
 
     protected override void ReceiveKnockback(Vector3 knockbackDir) {
         // Chạy luồng xử lý thời gian độc lập

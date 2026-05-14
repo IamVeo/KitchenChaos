@@ -18,6 +18,6 @@ MonoBehaviour:
   attackDamage: 10
   attackRange: 1.5
   hitRadius: 0
-  attackCooldown: 1
+  attackCooldown: 0.5
   killRewardCoin: 10
   killRewardScore: 15

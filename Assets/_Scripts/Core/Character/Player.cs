@@ -170,6 +170,7 @@ public class Player : Character, IKitchenObjectParent {
 
     private void HandleMovement() {
         Vector3 moveDir = GetMovementDirection();
+        isWalking = moveDir != Vector3.zero;
 
         if (isTouchingCollider && moveDir != Vector3.zero)
         {
@@ -186,7 +187,6 @@ public class Player : Character, IKitchenObjectParent {
     private void HandleRotation()
     {
         Vector3 moveDir = GetMovementDirection();
-        isWalking = moveDir != Vector3.zero;
 
         if (moveDir != Vector3.zero) {
             float rotateSpeed = 10f;
@@ -209,8 +209,7 @@ public class Player : Character, IKitchenObjectParent {
                 if (hitCollider.TryGetComponent<Enemy>(out Enemy enemy)) {
                     // Nếu khách đang không đánh mình (tức là đang đi tìm bàn hoặc đang chờ món)
                     if (!enemy.IsAttackingPlayer()) {
-                        enemy.Enrage(); // Làm nó nổi điên hủy đơn luôn
-                        continue;       // Bỏ qua lực đẩy lùi vì nó đang bị khóa FreezeAll
+                        enemy.Enrage(); // Làm nó nổi điên hủy đơn luôn (đồng thời gỡ khóa FreezeAll trong Enrage)
                     }
                 }
 
