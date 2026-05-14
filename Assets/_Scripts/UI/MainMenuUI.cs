@@ -23,10 +23,10 @@ public class MainMenuUI : MonoBehaviour {
 
     private void Awake() {
         playButton.onClick.AddListener(() => {
-            SceneManager.LoadSceneAsync("NewGameScene");
+            SceneManager.LoadSceneAsync(CONST.GAME_SCENE_NAME);
         });
         loginButton.onClick.AddListener(() => {
-            SceneManager.LoadSceneAsync("LoginScene");
+            SceneManager.LoadSceneAsync(CONST.LOGIN_SCENE_NAME);
         });
         logoutButton.onClick.AddListener(() => {
             AuthManager.Logout();
@@ -53,16 +53,11 @@ public class MainMenuUI : MonoBehaviour {
 
     private void UpdateLoginStatus() {
         
-        
-        
         bool isLoggedIn = !string.IsNullOrEmpty(AuthManager.JwtToken);
         
-        // playButton.gameObject.SetActive(isLoggedIn);
-        logoutButton.gameObject.SetActive(isLoggedIn);
-        // shopButton.gameObject.SetActive(isLoggedIn);
-        leaderboardButton.gameObject.SetActive(isLoggedIn);
-        
         loginButton.gameObject.SetActive(!isLoggedIn);
+        logoutButton.gameObject.SetActive(isLoggedIn);
+        leaderboardButton.gameObject.SetActive(isLoggedIn);
 		
 		 if (greetingText != null) {
             if (isLoggedIn && !string.IsNullOrEmpty(AuthManager.CurrentUsername)) {

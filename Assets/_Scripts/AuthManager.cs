@@ -3,6 +3,7 @@ using System.Text;
 using UnityEngine.Networking;
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class AuthManager : MonoBehaviour {
 
@@ -144,7 +145,7 @@ public class AuthManager : MonoBehaviour {
                     targetFeedbackText.text = $"Welcome, {CurrentUsername}!";
                     targetFeedbackText.color = Color.green;
 
-                    UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("MainMenuScene");
+                    SceneManager.LoadSceneAsync(CONST.MAIN_MENU_SCENE_NAME);
                 } else {
                     MessageResponse messageResponse = JsonUtility.FromJson<MessageResponse>(request.downloadHandler.text);
                     targetFeedbackText.text = messageResponse.message;
