@@ -46,6 +46,10 @@ public class PaymentManager : MonoBehaviour
     [SerializeField]
     private bool enableDebugLog = true;
 
+    private const string LAST_PENDING_TXN_PREFS_KEY = "Payment_LastPendingTxnRef";
+
+    public string LastPendingTxnRef { get; private set; }
+
     public static PaymentManager Instance
     {
         get
@@ -87,6 +91,7 @@ public class PaymentManager : MonoBehaviour
         }
 
         _instance = this;
+        LoadCachedPendingTxnRef();
     }
 
     /// <summary>
@@ -221,6 +226,7 @@ public class PaymentManager : MonoBehaviour
                     PaymentUrlResponse paymentResponse = JsonUtility.FromJson<PaymentUrlResponse>(jsonResponse);
 
                     string paymentUrl = ExtractPaymentUrl(paymentResponse);
+                    CachePendingTxnRef(paymentResponse);
                     if (!string.IsNullOrEmpty(paymentUrl))
                     {
                         DebugLog($"Payment URL created successfully. Opening: {paymentUrl}");
@@ -300,6 +306,7 @@ public class PaymentManager : MonoBehaviour
 
                 PaymentUrlResponse paymentResponse = JsonUtility.FromJson<PaymentUrlResponse>(jsonResponse);
                 string paymentUrl = ExtractPaymentUrl(paymentResponse);
+                CachePendingTxnRef(paymentResponse);
 
                 if (string.IsNullOrEmpty(paymentUrl))
                 {
@@ -318,6 +325,41 @@ public class PaymentManager : MonoBehaviour
                 DebugLog(errorMsg);
                 onError?.Invoke(errorMsg);
             }
+        }
+    }
+
+    private void CachePendingTxnRef(PaymentUrlResponse paymentResponse)
+    {
+        if (paymentResponse == null || string.IsNullOrWhiteSpace(paymentResponse.txnRef))
+        {
+            return;
+        }
+
+        LastPendingTxnRef = paymentResponse.txnRef;
+        PlayerPrefs.SetString(LAST_PENDING_TXN_PREFS_KEY, LastPendingTxnRef);
+        PlayerPrefs.Save();
+        DebugLog($"[PaymentManager] Cached pending txnRef: {LastPendingTxnRef}");
+    }
+
+    public void ClearLastPendingTxnRef()
+    {
+        if (string.IsNullOrEmpty(LastPendingTxnRef))
+        {
+            return;
+        }
+
+        LastPendingTxnRef = null;
+        PlayerPrefs.DeleteKey(LAST_PENDING_TXN_PREFS_KEY);
+        PlayerPrefs.Save();
+        DebugLog("[PaymentManager] Cleared cached pending txnRef.");
+    }
+
+    private void LoadCachedPendingTxnRef()
+    {
+        LastPendingTxnRef = PlayerPrefs.GetString(LAST_PENDING_TXN_PREFS_KEY, string.Empty);
+        if (!string.IsNullOrEmpty(LastPendingTxnRef))
+        {
+            DebugLog($"[PaymentManager] Loaded cached pending txnRef: {LastPendingTxnRef}");
         }
     }
 

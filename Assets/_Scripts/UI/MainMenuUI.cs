@@ -4,6 +4,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro;
 
 public class MainMenuUI : MonoBehaviour {
 
@@ -17,6 +18,7 @@ public class MainMenuUI : MonoBehaviour {
     
     [Header("UI Popups")]
     [SerializeField] private GameObject shopUIGameObject;
+    [SerializeField] private TextMeshProUGUI greetingText;
     [SerializeField] private GameObject leaderboardUIGameObject;
 
     private void Awake() {
@@ -51,13 +53,38 @@ public class MainMenuUI : MonoBehaviour {
 
     private void UpdateLoginStatus() {
         
+        
+        
         bool isLoggedIn = !string.IsNullOrEmpty(AuthManager.JwtToken);
         
-        playButton.gameObject.SetActive(isLoggedIn);
+        // playButton.gameObject.SetActive(isLoggedIn);
         logoutButton.gameObject.SetActive(isLoggedIn);
-        shopButton.gameObject.SetActive(isLoggedIn);
+        // shopButton.gameObject.SetActive(isLoggedIn);
         leaderboardButton.gameObject.SetActive(isLoggedIn);
         
         loginButton.gameObject.SetActive(!isLoggedIn);
+		
+		 if (greetingText != null) {
+            if (isLoggedIn && !string.IsNullOrEmpty(AuthManager.CurrentUsername)) {
+                greetingText.gameObject.SetActive(true);
+                greetingText.text = $"Greeting, {AuthManager.CurrentUsername}";
+            } else {
+                greetingText.gameObject.SetActive(false);
+                greetingText.text = string.Empty;
+            }
+        }
+    }
+
+    public void SetGreetingVisible(bool isVisible) {
+        if (greetingText == null) {
+            return;
+        }
+
+        if (!isVisible) {
+            greetingText.gameObject.SetActive(false);
+            return;
+        }
+
+        UpdateLoginStatus();
     }
 }

@@ -52,20 +52,35 @@ public class CurrencyManager
 
     public void AddCurrency(CurrencyType type, int amount)
     {
+        AddCurrency(type, amount, true);
+    }
+
+    public void AddCurrency(CurrencyType type, int amount, bool recordDelta)
+    {
         if (amount <= 0)
         {
             Debug.LogWarning($"Added amount for {type} currency must be positive. Given: {amount}");
             return;
         }
-        
+
         balances[type] = GetBalance(type) + amount;
         OnCurrencyBalanceChanged?.Invoke(type, balances[type]);
         SaveCurrencyData(type);
-        
+
+        if (recordDelta && type == CurrencyType.Coin)
+        {
+            CoinSyncManager.QueuePendingDelta(amount);
+        }
+
         Debug.Log($"Adding {amount} to {type} currency. Current balance: {GetBalance(type)}");
     }
 
     public bool TrySpendCurrency(CurrencyType type, int amount)
+    {
+        return TrySpendCurrency(type, amount, true);
+    }
+
+    public bool TrySpendCurrency(CurrencyType type, int amount, bool recordDelta)
     {
         if (amount <= 0)
         {
@@ -79,12 +94,35 @@ public class CurrencyManager
             balances[type] = currentBalance - amount;
             OnCurrencyBalanceChanged?.Invoke(type, balances[type]);
             SaveCurrencyData(type);
-            
+
+            if (recordDelta && type == CurrencyType.Coin)
+            {
+                CoinSyncManager.QueuePendingDelta(-amount);
+            }
+
             Debug.Log($"Spending {amount} of {type} currency. Current balance: {GetBalance(type)}");
             return true;
         }
-        
+
         Debug.LogWarning($"Insufficient {type} currency. Current balance: {currentBalance}, attempted to spend: {amount}");
         return false;
+    }
+
+    public void SetBalance(CurrencyType type, int amount, bool recordDelta)
+    {
+        int previousBalance = GetBalance(type);
+        int clampedAmount = Mathf.Max(0, amount);
+        balances[type] = clampedAmount;
+        OnCurrencyBalanceChanged?.Invoke(type, balances[type]);
+        SaveCurrencyData(type);
+
+        if (recordDelta && type == CurrencyType.Coin)
+        {
+            int delta = clampedAmount - previousBalance;
+            if (delta != 0)
+            {
+                CoinSyncManager.QueuePendingDelta(delta);
+            }
+        }
     }
 }

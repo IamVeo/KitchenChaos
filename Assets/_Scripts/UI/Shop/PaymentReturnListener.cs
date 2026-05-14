@@ -30,6 +30,8 @@ public class PaymentReturnListener : MonoBehaviour
     private bool isSyncing;
     private float lastSyncTimestamp;
 
+    public event Action<string> OnLastPendingPaymentFailed;
+
     private void Awake()
     {
         LoadProcessedRefs();
@@ -195,8 +197,31 @@ public class PaymentReturnListener : MonoBehaviour
         }
 
         int coinsToAdd = 0;
+        string lastPendingTxnRef = PaymentManager.Instance.LastPendingTxnRef;
+        bool lastPendingResolved = false;
+        bool lastPendingFailed = false;
         foreach (PaymentHistoryResponse transaction in history)
         {
+            if (transaction == null)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrEmpty(lastPendingTxnRef)
+                && string.Equals(transaction.txnRef, lastPendingTxnRef, StringComparison.Ordinal))
+            {
+                if (IsSuccessful(transaction))
+                {
+                    lastPendingResolved = true;
+                }
+                else if (!string.IsNullOrEmpty(transaction.status)
+                         && transaction.status.Equals("FAILED", StringComparison.OrdinalIgnoreCase))
+                {
+                    lastPendingResolved = true;
+                    lastPendingFailed = true;
+                }
+            }
+
             if (!IsSuccessful(transaction))
             {
                 continue;
@@ -217,12 +242,23 @@ public class PaymentReturnListener : MonoBehaviour
 
         if (coinsToAdd > 0)
         {
-            CurrencyManager.Instance.AddCurrency(CurrencyType.Coin, coinsToAdd);
+            CurrencyManager.Instance.AddCurrency(CurrencyType.Coin, coinsToAdd, false);
             DebugLog($"[PaymentReturnListener] Added {coinsToAdd} coin(s) from new successful payment(s).");
         }
         else
         {
             DebugLog("[PaymentReturnListener] No new successful payments to apply.");
+        }
+
+        if (lastPendingResolved)
+        {
+            if (lastPendingFailed)
+            {
+                DebugLog("[PaymentReturnListener] Last pending payment expired or failed.");
+                OnLastPendingPaymentFailed?.Invoke(lastPendingTxnRef);
+            }
+
+            PaymentManager.Instance.ClearLastPendingTxnRef();
         }
 
         SaveProcessedRefs();
@@ -287,7 +323,4 @@ public class PaymentReturnListener : MonoBehaviour
         }
     }
 }
-
-
-
 
