@@ -87,9 +87,9 @@ public class VnPayShopPurchaseButton : MonoBehaviour
 
         if (packageNameText != null)
         {
-            packageNameText.text = string.IsNullOrWhiteSpace(packageData.displayName)
+            packageNameText.text = string.IsNullOrWhiteSpace(packageData.itemName)
                 ? packageData.name
-                : packageData.displayName;
+                : packageData.itemName;
         }
 
         if (coinAmountText != null)

@@ -163,7 +163,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: -8, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &266857953395900675
 CanvasRenderer:
@@ -220,11 +220,11 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 15
+  m_fontSize: 17.9
   m_fontSizeBase: 15
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 1
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 2
@@ -236,7 +236,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_enableWordWrapping: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -2395,7 +2395,7 @@ MonoBehaviour:
   currencyText: {fileID: 266857954346795508}
   categoryVerticalTabsUI: {fileID: 266857954886186392}
   shopSlotScrollViewUI: {fileID: 266857954359613878}
-  fallbackTopUpIcon: {fileID: 0}
+  fallbackTopUpIcon: {fileID: 21300000, guid: 96ce2f1e6e7444148a7c7f110db10d12, type: 3}
   networkStateCheckIntervalSeconds: 0.75
 --- !u!114 &1600692859119517975
 MonoBehaviour:

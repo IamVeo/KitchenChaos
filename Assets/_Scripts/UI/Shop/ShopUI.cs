@@ -310,7 +310,7 @@ public class ShopUI : MonoBehaviour
 
             TopUpPackageSo runtimePackage = ScriptableObject.CreateInstance<TopUpPackageSo>();
             runtimePackage.id = package.id;
-            runtimePackage.displayName = string.IsNullOrWhiteSpace(package.displayName)
+            runtimePackage.itemName = string.IsNullOrWhiteSpace(package.displayName)
                 ? package.id
                 : package.displayName;
             runtimePackage.coinAmount = package.coinAmount;

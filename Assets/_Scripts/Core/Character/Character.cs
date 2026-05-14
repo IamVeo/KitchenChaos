@@ -23,6 +23,7 @@ public class Character : MonoBehaviour
     public float AttackCooldown => characterDataSO.attackCooldown;
 
     public event EventHandler OnAttackPerformed;
+    public event EventHandler<Vector3> OnDamaged;
 
     protected virtual void Awake()
     {
@@ -41,6 +42,7 @@ public class Character : MonoBehaviour
     private void HealthManager_OnDamageTaken(int damageAmount, Vector3 damageDirection)
     {
         ReceiveKnockback(damageDirection);
+        OnDamaged?.Invoke(this, damageDirection);
     }
     
     public virtual bool IsWalking() => false;

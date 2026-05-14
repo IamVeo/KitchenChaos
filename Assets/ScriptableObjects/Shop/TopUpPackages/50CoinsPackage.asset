@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: 50CoinsPackage
   m_EditorClassIdentifier: 
   id: coin_50
-  displayName: 50 coins
+  itemName: 50 Coints
+  category: 2
+  price: 0
+  icon: {fileID: 21300000, guid: 96ce2f1e6e7444148a7c7f110db10d12, type: 3}
   coinAmount: 50
   amountVnd: 50000
   orderInfo: Nap 50000 vnd vao game
-  icon: {fileID: 0}

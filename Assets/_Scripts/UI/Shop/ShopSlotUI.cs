@@ -21,7 +21,7 @@ public class ShopSlotUI : MonoBehaviour
         topUpPackageSo = null;
         shopItemSo = item;
         itemNameText.text = item.itemName;
-        priceText.text = item.price.ToString();
+        priceText.text = string.Concat(item.price.ToString(), " coins");
         iconImage.sprite = item.icon;
         iconImage.enabled = item.icon != null;
         
